@@ -1,0 +1,35 @@
+#! backend-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: backend
+    namespace: healthlink-backend
+    labels:
+        com.docker.compose.project: healthlink-backend
+        com.docker.compose.service: backend
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: healthlink-backend
+            com.docker.compose.service: backend
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: healthlink-backend
+                com.docker.compose.service: backend
+                com.docker.compose.network.default: "true"
+        spec:
+            containers:
+                - name: backend
+                  image: healthlink-backend-backend
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: MONGO_URI
+                      value: "mongodb://mongo:27017"
+                  ports:
+                    - name: backend-18080
+                      containerPort: 18080

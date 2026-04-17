@@ -1,0 +1,77 @@
+Package: vcpkg-cmake-config
+Version: 2024-05-23
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 51752d65123be6e3e4cc6931c4e9eacaed152fe8c1037baf8b6f7cfb20e4a158
+Status: install ok installed
+
+Package: vcpkg-cmake
+Version: 2024-04-23
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 36111134beca99d901eaff665ffbfdc5c6891513f4600b3b7f9df069ad080968
+Status: install ok installed
+
+Package: asio
+Version: 1.32.0
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: ea5a0c94a767ac536982e8514610e14a0c3fb57c867e56faf07bc2dac7df95a3
+Description: Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach.
+Status: install ok installed
+
+Package: crow
+Version: 1.3.2
+Depends: asio, vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: aad783ca60e44c5796d8a6de351038993dad78cd2b78e8097587f32687260021
+Description: Very fast and easy to use C++ micro web framework
+Status: install ok installed
+
+Package: zlib
+Version: 1.3.1
+Depends: vcpkg-cmake
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 7b238137f455f45de9b9a73dcea3dc6e4985015d779c1c48cc78b4a0e73b2840
+Description: A compression library
+Status: install ok installed
+
+Package: utf8proc
+Version: 2.11.3
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 622ba545a7327fda1972a02fb8ebc7db47023239259a500b2382d3c4ede89dcc
+Description: Clean C library for processing UTF-8 Unicode data.
+Status: install ok installed
+
+Package: libbson
+Version: 2.2.4
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: cc24e80ff1e051aee5547da299c0223e8319821757c7ee6100ee1e7018b1c960
+Description: libbson is a library providing useful routines related to building, parsing, and iterating BSON documents.
+Status: install ok installed
+
+Package: mongo-c-driver
+Version: 2.2.4
+Depends: libbson, utf8proc, vcpkg-cmake, vcpkg-cmake-config, zlib
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 4944821fb8ce12a84938279e06d255cf944cca6de53dc0e9230850ecee4637cf
+Description: Client library written in C for MongoDB.
+Status: install ok installed
+
+Package: mongo-cxx-driver
+Version: 4.1.4
+Depends: libbson, mongo-c-driver, vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: b089536faf80b5991a9f6c635b834dc0714bedfe1045380f28373f0c5e44ba73
+Description: MongoDB C++ Driver.
+Status: install ok installed
+

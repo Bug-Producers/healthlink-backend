@@ -1,0 +1,8 @@
+{
+  "name": "healthlink-backend",
+  "version": "1.0.0",
+  "dependencies": [
+    "crow",
+    "mongo-cxx-driver"
+  ]
+}
