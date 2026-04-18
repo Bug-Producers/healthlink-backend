@@ -4,22 +4,65 @@ project(healthlink_backend)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Fix Windows header targeting
+add_compile_definitions(_WIN32_WINNT=0x0A00)
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
+
 find_package(crow CONFIG REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
 
 add_executable(healthlink_backend
         src/main.cpp
-        src/env_loader.h
+        src/utils/env_loader.h
+        src/utils/StringUtils.h
+        src/models/Notification.h
+        src/repositories/NotificationRepository.h
+        src/services/MongoConnection.h
+        src/services/MongoService.h
+        src/services/FirebaseAuth.h
         src/models/Appointment.h
+        src/models/AppointmentStatus.h
+        src/models/Department.h
+        src/models/Doctor.h
+        src/models/Patient.h
+        src/models/PatientHistory.h
+        src/models/Payment.h
+        src/models/Rating.h
+        src/models/TimeSlot.h
+        src/models/WeeklySchedule.h
+        src/core/linked_list/LinkedList.h
+        src/core/linked_list/Node.h
+        src/core/queue/Queue.h
+        src/core/queue/QueueNode.h
+        src/core/stack/Stack.h
+        src/core/stack/StackNode.h
+        src/core/tree/Tree.h
+        src/core/tree/TreeNode.h
+        src/core/router/ApiRouter.h
+        src/repositories/DoctorRepository.h
+        src/repositories/PatientRepository.h
+        src/repositories/ScheduleRepository.h
+        src/repositories/AppointmentRepository.h
+        src/repositories/PaymentRepository.h
+        src/repositories/RatingRepository.h
+        src/repositories/PatientHistoryRepository.h
+        src/controllers/DoctorController.h
+        src/controllers/PatientController.h
+        src/controllers/TestController.h
 )
 
 target_link_libraries(healthlink_backend PRIVATE
         Crow::Crow
-        mongo::mongocxx_shared
-        mongo::bsoncxx_shared
+        $<IF:$<TARGET_EXISTS:mongo::bsoncxx_static>,mongo::bsoncxx_static,mongo::bsoncxx_shared>
+        $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_static,mongo::mongocxx_shared>
 )
 
-# Crucial fix for MinGW and C++ mongo driver linking. It prevents the
-# dllimport errors you are seeing in your build logs.
-target_compile_definitions(healthlink_backend PRIVATE MONGOCXX_STATIC BSONCXX_STATIC)
+target_compile_definitions(healthlink_backend PRIVATE
+        $<$<TARGET_EXISTS:mongo::mongocxx_static>:MONGOCXX_STATIC>
+        $<$<TARGET_EXISTS:mongo::bsoncxx_static>:BSONCXX_STATIC>
+        $<$<NOT:$<TARGET_EXISTS:mongo::mongocxx_static>>:MONGOCXX_DLL>
+        $<$<NOT:$<TARGET_EXISTS:mongo::bsoncxx_static>>:BSONCXX_DLL>
+)

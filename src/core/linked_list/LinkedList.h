@@ -24,6 +24,86 @@ public:
     }
 
     /**
+     * @brief Copy Constructor (Deep Copy).
+     * 
+     * Essential for safely copying the list without creating shared memory or dangling pointers.
+     * 
+     * Usage:
+     * @code
+     *   LinkedList<int> original;
+     *   original.push(5);
+     *   LinkedList<int> copy = original; // Safely clones all nodes natively
+     * @endcode
+     */
+    LinkedList(const LinkedList& other) {
+        head = nullptr;
+        count = 0;
+        
+        if (!other.head) return;
+        
+        Node<T>* otherCurrent = other.head;
+        Node<T>* tail = nullptr;
+        
+        while (otherCurrent != nullptr) {
+            Node<T>* newNode = new Node<T>(otherCurrent->data, nullptr);
+            if (!head) {
+                head = newNode;
+                tail = newNode;
+            } else {
+                tail->next = newNode;
+                tail = newNode;
+            }
+            count++;
+            otherCurrent = otherCurrent->next;
+        }
+    }
+
+    /**
+     * @brief Copy Assignment Operator (Deep Copy).
+     * 
+     * Automatically clears existing nodes within the targeted list preventing memory leaks, 
+     * before securely transferring the values.
+     * 
+     * Usage:
+     * @code
+     *   LinkedList<int> target, source;
+     *   target = source; // Wipes target, then safely clones all source nodes
+     * @endcode
+     */
+    LinkedList& operator=(const LinkedList& other) {
+        if (this == &other) return *this;
+
+        Node<T>* current = head;
+        while (current != nullptr) {
+            Node<T>* nextNode = current->next;
+            delete current;
+            current = nextNode;
+        }
+        
+        head = nullptr;
+        count = 0;
+
+        if (!other.head) return *this;
+        
+        Node<T>* otherCurrent = other.head;
+        Node<T>* tail = nullptr;
+        
+        while (otherCurrent != nullptr) {
+            Node<T>* newNode = new Node<T>(otherCurrent->data, nullptr);
+            if (!head) {
+                head = newNode;
+                tail = newNode;
+            } else {
+                tail->next = newNode;
+                tail = newNode;
+            }
+            count++;
+            otherCurrent = otherCurrent->next;
+        }
+        return *this;
+    }
+
+    /**
      * @brief Destructor: Cleans up memory when the list is destroyed.
      * Prevents memory leaks by deleting each node one by one.
      */

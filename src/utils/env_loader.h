@@ -7,16 +7,22 @@
 
 namespace env {
 
-    inline std::string get(const char* key, const std::string& fallback = "") {
+    std::string get(const char* key, const std::string& fallback = "") {
         const char* val = std::getenv(key);
         return val ? std::string(val) : fallback;
     }
 
-    inline void load() {
+    void load() {
         std::ifstream file(".env");
+        if (!file.is_open()) {
+            file.open("../.env"); // Check parent dir for cmake-build-debug environments
+            if (!file.is_open()) {
+                file.open("../../.env");
+            }
+        }
 
         if (!file.is_open()) {
-            std::cerr << "Warning: .env file not found. Using system env variables.\n";
+            std::cerr << "Warning: .env file not found anywhere. Using system env variables.\n";
             return;
         }
 
