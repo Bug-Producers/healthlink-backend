@@ -2,13 +2,15 @@
 
 #include <string>
 
+/**
+ * @brief Represents a registered patient in the system.
+ *
+ * Stores personal, contact, and demographic data.
+ */
 struct Patient {
-    std::string id;
-    std::string name;
-    std::string email;
-    std::string phone;
-    std::string dateOfBirth; // YYYY-MM-DD
-    std::string gender;
-    std::string address;
-    std::string bloodGroup;
+    std::string id;            // Unique identifier for the patient
+    std::string name;          // Full name of the patient
+    std::string email;         // Contact email address
+    std::string dateOfBirth;   // Date of birth in YYYY-MM-DD format
+    std::string gender;        // Biological or identified gender (e.g., Male, Female, Other)
 };

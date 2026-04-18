@@ -11,14 +11,15 @@ find_package(bsoncxx CONFIG REQUIRED)
 add_executable(healthlink_backend
         src/main.cpp
         src/env_loader.h
-        src/env_loader.h
-        src/env_loader.h
         src/models/Appointment.h
 )
-
 
 target_link_libraries(healthlink_backend PRIVATE
         Crow::Crow
         mongo::mongocxx_shared
         mongo::bsoncxx_shared
 )
+
+# Crucial fix for MinGW and C++ mongo driver linking. It prevents the
+# dllimport errors you are seeing in your build logs.
+target_compile_definitions(healthlink_backend PRIVATE MONGOCXX_STATIC BSONCXX_STATIC)

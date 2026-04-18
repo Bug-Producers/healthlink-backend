@@ -23,7 +23,7 @@ int main() {
         crow::SimpleApp app;
 
         CROW_ROUTE(app, "/")([] {
-            return "HealthLink API is running 🚀";
+            return "HealthLink API is running";
         });
 
         std::cout << "Server running on port " << port << "\n";
