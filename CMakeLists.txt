@@ -1,16 +1,28 @@
 cmake_minimum_required(VERSION 3.28)
+
 project(healthlink_backend)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Fix Windows header targeting
-add_compile_definitions(_WIN32_WINNT=0x0A00)
-if(MSVC)
-    add_compile_options(/bigobj)
-endif()
+include(FetchContent)
 
-find_package(crow CONFIG REQUIRED)
+FetchContent_Declare(
+        asio
+        GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+        GIT_TAG asio-1-30-2
+)
+
+FetchContent_MakeAvailable(asio)
+
+FetchContent_Declare(
+        crow
+        GIT_REPOSITORY https://github.com/CrowCpp/Crow.git
+        GIT_TAG v1.2.1
+)
+
+FetchContent_MakeAvailable(crow)
+
 find_package(mongocxx CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
 
@@ -58,11 +70,4 @@ target_link_libraries(healthlink_backend PRIVATE
         Crow::Crow
         $<IF:$<TARGET_EXISTS:mongo::bsoncxx_static>,mongo::bsoncxx_static,mongo::bsoncxx_shared>
         $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_static,mongo::mongocxx_shared>
-)
-
-target_compile_definitions(healthlink_backend PRIVATE
-        $<$<TARGET_EXISTS:mongo::mongocxx_static>:MONGOCXX_STATIC>
-        $<$<TARGET_EXISTS:mongo::bsoncxx_static>:BSONCXX_STATIC>
-        $<$<NOT:$<TARGET_EXISTS:mongo::mongocxx_static>>:MONGOCXX_DLL>
-        $<$<NOT:$<TARGET_EXISTS:mongo::bsoncxx_static>>:BSONCXX_DLL>
 )

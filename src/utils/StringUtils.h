@@ -10,12 +10,6 @@
  * Custom lists can sometimes memory-leak during string tokenization loops.
  * This utility acts as a secure processing bridge leveraging standard native vectors.
  *
- * Usage:
- * @code
- *   std::string url = "/api/doctors/123/profile?token=xyz";
- *   std::vector<std::string> tokens = StringUtils::split(url, '/');
- *   // Result: ["api", "doctors", "123", "profile"]
- * @endcode
  */
 class StringUtils {
 public:

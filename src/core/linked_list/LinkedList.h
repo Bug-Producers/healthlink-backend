@@ -59,7 +59,7 @@ public:
     }
 
     /**
-     * @brief Copy Assignment Operator (Deep Copy).
+     * @brief Copy Assignment Operator.
      * 
      * Automatically clears existing nodes within the targeted list preventing memory leaks, 
      * before securely transferring the values.

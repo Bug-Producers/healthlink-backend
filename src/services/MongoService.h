@@ -22,7 +22,7 @@ using bsoncxx::builder::basic::make_document;
  */
 class MongoService {
 private:
-    std::string dbName_;   // Which database to talk to (e.g. "healthlink")
+    std::string dbName_;  
 
 public:
     /**
@@ -86,7 +86,7 @@ public:
         auto collection = (*client)[dbName_][collectionName];
 
         auto result = collection.insert_one(document);
-        return result.has_value();
+        return static_cast<bool>(result);
     }
 
     /**
@@ -105,7 +105,7 @@ public:
         if (upsert) opts.upsert(true);
 
         auto result = collection.replace_one(filter, replacement, opts);
-        return result && (result->modified_count() > 0 || result->upserted_id().has_value());
+        return result && (result->modified_count() > 0 || static_cast<bool>(result->upserted_id()));
     }
 
     /**
@@ -143,6 +143,6 @@ public:
         opts.upsert(true);
 
         auto result = collection.update_one(filter, update.view(), opts);
-        return result.has_value();
+        return static_cast<bool>(result);
     }
 };
