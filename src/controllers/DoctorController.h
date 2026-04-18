@@ -46,8 +46,26 @@ public:
      */
     void registerRoutes(ApiRouter& router) {
 
+        router.get("/api/doctors/authTest", [this](const crow::request& req) -> crow::response {
+    // Print ALL headers
+    for (auto& [key, val] : req.headers) {
+        std::cout << "[HEADER] " << key << " = " << val << std::endl;
+    }
+
+auto token = req.get_header_value("X-Auth-Token");
+std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
+    std::cout << "[authTest] Raw Authorization header: " << token << std::endl;
+    std::cout << "[authTest] Resolved UID: " << uid << std::endl;
+
+    if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+    crow::json::wvalue json;
+    json["uid"]   = uid;
+    json["token"] = token;
+    return crow::response{200, json};
+});
         // GET /api/doctors/profile
-        router.get("/api/doctors/profile", [this](const crow::request& req) -> crow::response {
+        "/api/doctors/profile", [this](const crow::request& req) -> crow::response {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 

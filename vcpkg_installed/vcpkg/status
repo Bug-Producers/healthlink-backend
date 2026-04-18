@@ -75,3 +75,20 @@ Abi: b089536faf80b5991a9f6c635b834dc0714bedfe1045380f28373f0c5e44ba73
 Description: MongoDB C++ Driver.
 Status: install ok installed
 
+Package: vcpkg-cmake-get-vars
+Version: 2025-05-29
+Depends: vcpkg-cmake
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 34f7fd6c601e18aea81d9018e05ba37fed53df019a7e0ba7c6ba74783fa51f3d
+Status: install ok installed
+
+Package: openssl
+Version: 3.6.2
+Depends: vcpkg-cmake, vcpkg-cmake-config, vcpkg-cmake-get-vars
+Architecture: x64-windows
+Multi-Arch: same
+Abi: ee1b7dfcb8bf05fd68764377d93355f41f9337fa6e99fda64a1907b783657c67
+Description: OpenSSL is an open source project that provides a robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols. It is also a general-purpose cryptography library.
+Status: install ok installed
+
