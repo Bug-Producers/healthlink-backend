@@ -50,6 +50,7 @@ int main() {
         // ================= Controllers =================
         DoctorController doctorController{
             &doctorRepo,
+            &patientRepo,
             &scheduleRepo,
             &appointmentRepo,
             &paymentRepo,

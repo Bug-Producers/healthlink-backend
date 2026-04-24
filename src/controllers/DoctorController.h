@@ -5,6 +5,7 @@
 
 #include "../services/FirebaseAuth.h"
 #include "../repositories/DoctorRepository.h"
+#include "../repositories/PatientRepository.h"
 #include "../repositories/ScheduleRepository.h"
 #include "../repositories/AppointmentRepository.h"
 #include "../repositories/PaymentRepository.h"
@@ -18,6 +19,7 @@
 class DoctorController {
 private:
     DoctorRepository* doctorRepo_;
+    PatientRepository* patientRepo_;
     ScheduleRepository* scheduleRepo_;
     AppointmentRepository* appointmentRepo_;
     PaymentRepository* paymentRepo_;
@@ -27,6 +29,7 @@ private:
 public:
     DoctorController(
         DoctorRepository* doctorRepo,
+        PatientRepository* patientRepo,
         ScheduleRepository* scheduleRepo,
         AppointmentRepository* appointmentRepo,
         PaymentRepository* paymentRepo,
@@ -34,6 +37,7 @@ public:
         NotificationRepository* notificationRepo
     ) {
         doctorRepo_ = doctorRepo;
+        patientRepo_ = patientRepo;
         scheduleRepo_ = scheduleRepo;
         appointmentRepo_ = appointmentRepo;
         paymentRepo_ = paymentRepo;
@@ -46,46 +50,28 @@ public:
      */
     void registerRoutes(ApiRouter& router) {
 
-        router.get("/api/doctors/authTest", [this](const crow::request& req) -> crow::response {
-    // Print ALL headers
-    for (auto& [key, val] : req.headers) {
-        std::cout << "[HEADER] " << key << " = " << val << std::endl;
-    }
-
-auto token = req.get_header_value("X-Auth-Token");
-std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
-    std::cout << "[authTest] Raw Authorization header: " << token << std::endl;
-    std::cout << "[authTest] Resolved UID: " << uid << std::endl;
-
-    if (uid.empty()) return crow::response{401, "Unauthorized"};
-
-    crow::json::wvalue json;
-    json["uid"]   = uid;
-    json["token"] = token;
-    return crow::response{200, json};
-});
         // GET /api/doctors/profile
-        "/api/doctors/profile", [this](const crow::request& req) -> crow::response {
+        router.get("/api/doctors/profile", [this](const crow::request& req) -> crow::response {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
             try {
                 auto doctor = doctorRepo_->findById(uid).get();
                 crow::json::wvalue json;
-                json["uuid"]                 = doctor.uuid;
-                json["name"]                 = doctor.name;
-                json["city"]                 = doctor.city;
-                json["country"]              = doctor.country;
+                json["uuid"] = doctor.uuid;
+                json["name"] = doctor.name;
+                json["city"] = doctor.city;
+                json["country"] = doctor.country;
                 json["hospitalOrClinicName"] = doctor.hospitalOrClinicName;
-                json["rating"]               = doctor.rating;
-                json["expYears"]             = doctor.expYears;
-                json["patients"]             = doctor.patients;
-                json["about"]                = doctor.about;
-                json["profileImage"]         = doctor.profileImage;
-                json["appointmentDuration"]  = doctor.appointmentDuration;
-                json["bufferTime"]           = doctor.bufferTime;
-                json["department"]["name"]   = doctor.department.name;
-                json["department"]["count"]  = doctor.department.count;
+                json["rating"] = doctor.rating;
+                json["expYears"] = doctor.expYears;
+                json["patients"] = doctor.patients;
+                json["about"] = doctor.about;
+                json["profileImage"] = doctor.profileImage;
+                json["appointmentDuration"] = doctor.appointmentDuration;
+                json["bufferTime"] = doctor.bufferTime;
+                json["department"]["name"] = doctor.department.name;
+                json["department"]["count"] = doctor.department.count;
                 return crow::response{200, json};
             } catch (const std::exception& e) {
                 return crow::response{404, e.what()};
@@ -103,13 +89,13 @@ std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
             try {
                 auto doctor = doctorRepo_->findById(uid).get();
 
-                if (body.has("name"))                 doctor.name                 = body["name"].s();
-                if (body.has("city"))                 doctor.city                 = body["city"].s();
-                if (body.has("country"))              doctor.country              = body["country"].s();
+                if (body.has("name")) doctor.name = body["name"].s();
+                if (body.has("city")) doctor.city = body["city"].s();
+                if (body.has("country")) doctor.country = body["country"].s();
                 if (body.has("hospitalOrClinicName")) doctor.hospitalOrClinicName = body["hospitalOrClinicName"].s();
-                if (body.has("about"))                doctor.about                = body["about"].s();
-                if (body.has("appointmentDuration"))  doctor.appointmentDuration  = body["appointmentDuration"].i();
-                if (body.has("bufferTime"))           doctor.bufferTime           = body["bufferTime"].i();
+                if (body.has("about")) doctor.about = body["about"].s();
+                if (body.has("appointmentDuration")) doctor.appointmentDuration = body["appointmentDuration"].i();
+                if (body.has("bufferTime")) doctor.bufferTime = body["bufferTime"].i();
 
                 bool ok = doctorRepo_->updateProfile(uid, doctor).get();
                 if (ok) return crow::response{200, "Profile updated"};
@@ -220,6 +206,13 @@ std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
                     crow::json::wvalue a;
                     a["id"]        = node->data.id;
                     a["patientId"] = node->data.patient.id;
+                    try {
+                        auto pat = patientRepo_->findById(node->data.patient.id).get();
+                        a["patientName"] = pat.name;
+                        a["patientImage"] = pat.profileImage;
+                    } catch (...) {
+                        a["patientName"] = "Unknown";
+                    }
                     a["date"]      = node->data.date;
                     a["startTime"] = node->data.startTime;
                     a["endTime"]   = node->data.endTime;
@@ -232,6 +225,30 @@ std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
                 crow::json::wvalue json;
                 json["appointments"] = std::move(list);
                 return crow::response{200, json};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
+
+        // PATCH /api/doctors/appointments/<id>
+        router.patch("/api/doctors/appointments/*", [this](const crow::request& req) -> crow::response {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+            
+            auto segments = StringUtils::split(req.url);
+            if (segments.size() < 5) return crow::response(400);
+            std::string aptId = segments.back();
+
+            auto body = crow::json::load(req.body);
+            if (!body || !body.has("status")) return crow::response{400, "Need status integer"};
+
+            try {
+                int statusInt = body["status"].i();
+                AppointmentStatus newStatus = static_cast<AppointmentStatus>(statusInt);
+                
+                bool ok = appointmentRepo_->updateStatus(aptId, newStatus).get();
+                if (ok) return crow::response{200, "Appointment status updated"};
+                return crow::response{404, "Appointment not found"};
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
             }
@@ -307,6 +324,16 @@ std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
                 crow::json::wvalue json;
                 json["totalEarnings"] = stats.totalEarnings;
                 json["totalPayments"] = stats.totalPayments;
+                
+                std::vector<crow::json::wvalue> dailyArray;
+                for (auto& [dayKey, total] : stats.dailyBreakdown) {
+                    crow::json::wvalue d;
+                    d["date"] = dayKey;
+                    d["total"] = total;
+                    dailyArray.push_back(std::move(d));
+                }
+                json["dailyBreakdown"] = std::move(dailyArray);
+                
                 return crow::response{200, json};
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
@@ -367,6 +394,24 @@ std::cout << "[authTest] X-Auth-Token: " << token << std::endl;
                 crow::json::wvalue json;
                 json["notifications"] = std::move(list);
                 return crow::response{200, json};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
+
+        // PATCH /api/doctors/notifications/<id>
+        router.patch("/api/doctors/notifications/*", [this](const crow::request& req) -> crow::response {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto segments = StringUtils::split(req.url);
+            if (segments.size() < 5) return crow::response(400);
+            std::string notifId = segments.back();
+
+            try {
+                bool ok = notificationRepo_->markAsRead(notifId).get();
+                if (ok) return crow::response{200, "Notification marked as read"};
+                return crow::response{404, "Notification not found"};
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
             }

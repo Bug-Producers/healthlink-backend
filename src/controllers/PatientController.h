@@ -63,14 +63,14 @@ public:
                 auto* node = doctors.getHead();
                 while (node) {
                     crow::json::wvalue d;
-                    d["uuid"]                 = node->data.uuid;
-                    d["name"]                 = node->data.name;
-                    d["city"]                 = node->data.city;
+                    d["uuid"] = node->data.uuid;
+                    d["name"] = node->data.name;
+                    d["city"] = node->data.city;
                     d["hospitalOrClinicName"] = node->data.hospitalOrClinicName;
-                    d["rating"]               = node->data.rating;
-                    d["expYears"]             = node->data.expYears;
-                    d["profileImage"]         = node->data.profileImage;
-                    d["department"]["name"]   = node->data.department.name;
+                    d["rating"] = node->data.rating;
+                    d["expYears"] = node->data.expYears;
+                    d["profileImage"] = node->data.profileImage;
+                    d["department"]["name"] = node->data.department.name;
                     list.push_back(std::move(d));
                     node = node->next;
                 }
@@ -97,20 +97,47 @@ public:
                 auto avg    = ratingRepo_->getAverageRating(doctorId).get();
 
                 crow::json::wvalue json;
-                json["uuid"]                 = doctor.uuid;
-                json["name"]                 = doctor.name;
-                json["city"]                 = doctor.city;
-                json["country"]              = doctor.country;
+                json["uuid"] = doctor.uuid;
+                json["name"] = doctor.name;
+                json["city"] = doctor.city;
+                json["country"] = doctor.country;
                 json["hospitalOrClinicName"] = doctor.hospitalOrClinicName;
-                json["rating"]               = avg;
-                json["expYears"]             = doctor.expYears;
-                json["patients"]             = doctor.patients;
-                json["about"]                = doctor.about;
-                json["profileImage"]         = doctor.profileImage;
-                json["appointmentDuration"]  = doctor.appointmentDuration;
-                json["bufferTime"]           = doctor.bufferTime;
-                json["department"]["name"]   = doctor.department.name;
-                json["department"]["count"]  = doctor.department.count;
+                json["rating"] = avg;
+                json["expYears"] = doctor.expYears;
+                json["patients"] = doctor.patients;
+                json["about"] = doctor.about;
+                json["profileImage"] = doctor.profileImage;
+                json["appointmentDuration"] = doctor.appointmentDuration;
+                json["bufferTime"] = doctor.bufferTime;
+                json["department"]["name"] = doctor.department.name;
+                json["department"]["count"] = doctor.department.count;
+                return crow::response{200, json};
+            } catch (const std::exception& e) {
+                return crow::response{404, e.what()};
+            }
+        });
+
+        // GET /api/patients/<id>
+        router.get("/api/patients/*", [this](const crow::request& req) -> crow::response {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto segments = StringUtils::split(req.url);
+            if (segments.size() < 4) return crow::response(400);
+            std::string patientId = segments.back();
+
+            // We do a small hack: PatientController router matches /api/patients/doctors/* first because it has an exact matched segment "doctors"
+            // So /api/patients/<id> will naturally fall through to this exact wildcard match if it's not matching doctors or departments.
+            
+            try {
+                auto patient = patientRepo_->findById(patientId).get();
+                crow::json::wvalue json;
+                json["id"]          = patient.id;
+                json["name"]        = patient.name;
+                json["email"]       = patient.email;
+                json["dateOfBirth"] = patient.dateOfBirth;
+                json["gender"]      = patient.gender;
+                json["profileImage"]= patient.profileImage;
                 return crow::response{200, json};
             } catch (const std::exception& e) {
                 return crow::response{404, e.what()};
@@ -324,6 +351,28 @@ public:
                 json["patientId"] = history.patientId;
                 json["reports"]   = reports;
                 return crow::response{200, json};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
+
+        // POST /api/patients/history
+        router.post("/api/patients/history", [this](const crow::request& req) -> crow::response {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto body = crow::json::load(req.body);
+            if (!body || !body.has("patientId") || !body.has("report")) {
+                return crow::response{400, "Need patientId and report string"};
+            }
+
+            try {
+                std::string pId = body["patientId"].s();
+                std::string report = body["report"].s();
+
+                bool ok = historyRepo_->addReport(pId, report).get();
+                if (ok) return crow::response{201, "Report added"};
+                return crow::response{500, "Failed to add report"};
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
             }

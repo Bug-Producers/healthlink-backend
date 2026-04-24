@@ -13,4 +13,5 @@ struct Patient {
     std::string email;         // Contact email address
     std::string dateOfBirth;   // Date of birth in YYYY-MM-DD format
     std::string gender;        // Biological or identified gender (e.g., Male, Female, Other)
+    std::string profileImage;  // URL or path to the patient's profile image
 };

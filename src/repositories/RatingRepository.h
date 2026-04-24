@@ -49,22 +49,22 @@ private:
 
     Rating fromBson(bsoncxx::document::view doc) {
         Rating r{};
-        r.id        = std::string{doc["id"].get_string().value};
+        r.id = std::string{doc["id"].get_string().value};
         r.patientId = std::string{doc["patientId"].get_string().value};
-        r.doctorId  = std::string{doc["doctorId"].get_string().value};
-        r.stars     = doc["stars"].get_int32().value;
-        r.comment   = std::string{doc["comment"].get_string().value};
+        r.doctorId = std::string{doc["doctorId"].get_string().value};
+        r.stars = doc["stars"].get_int32().value;
+        r.comment = std::string{doc["comment"].get_string().value};
         r.createdAt = std::string{doc["createdAt"].get_string().value};
         return r;
     }
 
     bsoncxx::document::value toBson(const Rating& r) {
         return make_document(
-            kvp("id",        r.id),
+            kvp("id", r.id),
             kvp("patientId", r.patientId),
-            kvp("doctorId",  r.doctorId),
-            kvp("stars",     r.stars),
-            kvp("comment",   r.comment),
+            kvp("doctorId", r.doctorId),
+            kvp("stars", r.stars),
+            kvp("comment", r.comment),
             kvp("createdAt", r.createdAt)
         );
     }

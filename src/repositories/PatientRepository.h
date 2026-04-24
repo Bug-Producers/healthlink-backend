@@ -25,21 +25,25 @@ private:
 
     Patient fromBson(bsoncxx::document::view doc) {
         Patient p{};
-        p.id          = std::string{doc["id"].get_string().value};
-        p.name        = std::string{doc["name"].get_string().value};
-        p.email       = std::string{doc["email"].get_string().value};
+        p.id = std::string{doc["id"].get_string().value};
+        p.name = std::string{doc["name"].get_string().value};
+        p.email = std::string{doc["email"].get_string().value};
         p.dateOfBirth = std::string{doc["dateOfBirth"].get_string().value};
-        p.gender      = std::string{doc["gender"].get_string().value};
+        p.gender = std::string{doc["gender"].get_string().value};
+        if (doc.find("profileImage") != doc.end()) {
+            p.profileImage = std::string{doc["profileImage"].get_string().value};
+        }
         return p;
     }
 
     bsoncxx::document::value toBson(const Patient& p) {
         return make_document(
-            kvp("id",          p.id),
-            kvp("name",        p.name),
-            kvp("email",       p.email),
+            kvp("id", p.id),
+            kvp("name", p.name),
+            kvp("email", p.email),
             kvp("dateOfBirth", p.dateOfBirth),
-            kvp("gender",      p.gender)
+            kvp("gender", p.gender),
+            kvp("profileImage", p.profileImage)
         );
     }
 

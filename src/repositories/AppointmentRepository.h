@@ -65,12 +65,12 @@ private:
 
     Appointment fromBson(bsoncxx::document::view doc) {
         Appointment a{};
-        a.id        = std::string{doc["id"].get_string().value};
-        a.date      = std::string{doc["date"].get_string().value};
+        a.id = std::string{doc["id"].get_string().value};
+        a.date = std::string{doc["date"].get_string().value};
         a.startTime = std::string{doc["startTime"].get_string().value};
-        a.endTime   = std::string{doc["endTime"].get_string().value};
-        a.duration  = doc["duration"].get_int32().value;
-        a.status    = static_cast<AppointmentStatus>(doc["status"].get_int32().value);
+        a.endTime = std::string{doc["endTime"].get_string().value};
+        a.duration = doc["duration"].get_int32().value;
+        a.status = static_cast<AppointmentStatus>(doc["status"].get_int32().value);
 
         // We store doctor and patient as flat IDs
         if (doc.find("doctorId") != doc.end())
@@ -83,14 +83,14 @@ private:
 
     bsoncxx::document::value toBson(const Appointment& a) {
         return make_document(
-            kvp("id",        a.id),
-            kvp("doctorId",  a.doctor.uuid),
+            kvp("id", a.id),
+            kvp("doctorId", a.doctor.uuid),
             kvp("patientId", a.patient.id),
-            kvp("date",      a.date),
+            kvp("date", a.date),
             kvp("startTime", a.startTime),
-            kvp("endTime",   a.endTime),
-            kvp("duration",  a.duration),
-            kvp("status",    static_cast<int>(a.status))
+            kvp("endTime", a.endTime),
+            kvp("duration", a.duration),
+            kvp("status", static_cast<int>(a.status))
         );
     }
 
@@ -249,6 +249,31 @@ public:
                 make_document(kvp("id", appointmentId)).view(),
                 make_document(kvp("$set", make_document(
                     kvp("status", static_cast<int>(AppointmentStatus::Cancelled))
+                ))).view()
+            );
+        });
+    }
+
+    /**
+     * @brief Changes the status of an appointment.
+     */
+    std::future<bool> updateStatus(const std::string& appointmentId, AppointmentStatus newStatus) {
+        return std::async(std::launch::async, [this, appointmentId, newStatus]() -> bool {
+            auto doc = mongo_.findOne("appointments", make_document(kvp("id", appointmentId)).view());
+            if (doc) {
+                auto apt = fromBson(doc->view());
+                // Optionally notify based on the new status
+                if (newStatus == AppointmentStatus::Completed) {
+                    notificationRepo_->pushNotification(apt.patient.id, "Your appointment on " + apt.date + " was marked completed.");
+                } else if (newStatus == AppointmentStatus::Cancelled) {
+                    notificationRepo_->pushNotification(apt.patient.id, "Your appointment on " + apt.date + " was canceled.");
+                }
+            }
+
+            return mongo_.updateOne("appointments",
+                make_document(kvp("id", appointmentId)).view(),
+                make_document(kvp("$set", make_document(
+                    kvp("status", static_cast<int>(newStatus))
                 ))).view()
             );
         });

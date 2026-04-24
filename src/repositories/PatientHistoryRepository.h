@@ -31,7 +31,7 @@ private:
      */
     PatientHistory fromBson(bsoncxx::document::view doc) {
         PatientHistory ph{};
-        ph.id        = std::string{doc["id"].get_string().value};
+        ph.id = std::string{doc["id"].get_string().value};
         ph.patientId = std::string{doc["patientId"].get_string().value};
 
         if (doc.find("medicalReports") != doc.end()) {

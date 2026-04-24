@@ -49,23 +49,23 @@ private:
 
     Payment fromBson(bsoncxx::document::view doc) {
         Payment p{};
-        p.id            = std::string{doc["id"].get_string().value};
-        p.doctorId      = std::string{doc["doctorId"].get_string().value};
-        p.patientId     = std::string{doc["patientId"].get_string().value};
+        p.id = std::string{doc["id"].get_string().value};
+        p.doctorId = std::string{doc["doctorId"].get_string().value};
+        p.patientId = std::string{doc["patientId"].get_string().value};
         p.appointmentId = std::string{doc["appointmentId"].get_string().value};
-        p.amount        = doc["amount"].get_double().value;
-        p.createdAt     = std::string{doc["createdAt"].get_string().value};
+        p.amount = doc["amount"].get_double().value;
+        p.createdAt = std::string{doc["createdAt"].get_string().value};
         return p;
     }
 
     bsoncxx::document::value toBson(const Payment& p) {
         return make_document(
-            kvp("id",            p.id),
-            kvp("doctorId",      p.doctorId),
-            kvp("patientId",     p.patientId),
+            kvp("id", p.id),
+            kvp("doctorId", p.doctorId),
+            kvp("patientId", p.patientId),
             kvp("appointmentId", p.appointmentId),
-            kvp("amount",        p.amount),
-            kvp("createdAt",     p.createdAt)
+            kvp("amount", p.amount),
+            kvp("createdAt", p.createdAt)
         );
     }
 
@@ -84,11 +84,11 @@ public:
         return std::async(std::launch::async, [=, this]() -> Payment {
             Payment p{};
             p.id            = generateId();
-            p.doctorId      = doctorId;
-            p.patientId     = patientId;
+            p.doctorId = doctorId;
+            p.patientId = patientId;
             p.appointmentId = appointmentId;
-            p.amount        = amount;
-            p.createdAt     = nowTimestamp();
+            p.amount = amount;
+            p.createdAt = nowTimestamp();
 
             mongo_.insertOne("payments", toBson(p).view());
 
@@ -132,6 +132,7 @@ public:
     struct RevenueStats {
         double totalEarnings{0.0};
         int totalPayments{0};
+        std::unordered_map<std::string, double> dailyBreakdown;
     };
 
     /**
@@ -146,6 +147,13 @@ public:
             while (node) {
                 stats.totalEarnings += node->data.amount;
                 stats.totalPayments++;
+                
+                // Group by grabbing YYYY-MM-DD from ISO stamp
+                if (node->data.createdAt.length() >= 10) {
+                    std::string dayKey = node->data.createdAt.substr(0, 10);
+                    stats.dailyBreakdown[dayKey] += node->data.amount;
+                }
+
                 node = node->next;
             }
             return stats;

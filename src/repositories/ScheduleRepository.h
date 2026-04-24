@@ -46,7 +46,7 @@ private:
                         TimeSlot ts{};
                         auto sv = slotDoc.get_document().view();
                         ts.startTime = std::string{sv["startTime"].get_string().value};
-                        ts.endTime   = std::string{sv["endTime"].get_string().value};
+                        ts.endTime = std::string{sv["endTime"].get_string().value};
                         slots.push(ts);
                     }
                 }
@@ -74,7 +74,7 @@ private:
             while (node) {
                 slotsArr.append(make_document(
                     kvp("startTime", node->data.startTime),
-                    kvp("endTime",   node->data.endTime)
+                    kvp("endTime", node->data.endTime)
                 ));
                 node = node->next;
             }

@@ -66,4 +66,18 @@ public:
             return results;
         });
     }
+
+    /**
+     * @brief Marks a notification as read.
+     */
+    std::future<bool> markAsRead(const std::string& notificationId) {
+        return std::async(std::launch::async, [this, notificationId]() -> bool {
+            return mongo_.updateOne("notifications",
+                make_document(kvp("id", notificationId)).view(),
+                make_document(kvp("$set", make_document(
+                    kvp("read", true)
+                ))).view()
+            );
+        });
+    }
 };

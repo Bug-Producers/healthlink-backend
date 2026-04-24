@@ -29,18 +29,18 @@ private:
      */
     Doctor fromBson(bsoncxx::document::view doc) {
         Doctor d{};
-        d.uuid                 = std::string{doc["uuid"].get_string().value};
-        d.name                 = std::string{doc["name"].get_string().value};
-        d.city                 = std::string{doc["city"].get_string().value};
-        d.country              = std::string{doc["country"].get_string().value};
+        d.uuid = std::string{doc["uuid"].get_string().value};
+        d.name = std::string{doc["name"].get_string().value};
+        d.city = std::string{doc["city"].get_string().value};
+        d.country = std::string{doc["country"].get_string().value};
         d.hospitalOrClinicName = std::string{doc["hospitalOrClinicName"].get_string().value};
-        d.rating               = doc["rating"].get_double().value;
-        d.expYears             = doc["expYears"].get_int32().value;
-        d.patients             = doc["patients"].get_int32().value;
-        d.about                = std::string{doc["about"].get_string().value};
-        d.profileImage         = std::string{doc["profileImage"].get_string().value};
-        d.appointmentDuration  = doc["appointmentDuration"].get_int32().value;
-        d.bufferTime           = doc["bufferTime"].get_int32().value;
+        d.rating = doc["rating"].get_double().value;
+        d.expYears = doc["expYears"].get_int32().value;
+        d.patients = doc["patients"].get_int32().value;
+        d.about = std::string{doc["about"].get_string().value};
+        d.profileImage = std::string{doc["profileImage"].get_string().value};
+        d.appointmentDuration = doc["appointmentDuration"].get_int32().value;
+        d.bufferTime = doc["bufferTime"].get_int32().value;
 
         // Unpack the nested department
         if (doc.find("department") != doc.end()) {
@@ -57,20 +57,20 @@ private:
      */
     bsoncxx::document::value toBson(const Doctor& d) {
         return make_document(
-            kvp("uuid",                 d.uuid),
-            kvp("name",                 d.name),
-            kvp("city",                 d.city),
-            kvp("country",              d.country),
+            kvp("uuid", d.uuid),
+            kvp("name", d.name),
+            kvp("city", d.city),
+            kvp("country", d.country),
             kvp("hospitalOrClinicName", d.hospitalOrClinicName),
-            kvp("rating",               d.rating),
-            kvp("expYears",             d.expYears),
-            kvp("patients",             d.patients),
-            kvp("about",                d.about),
-            kvp("profileImage",         d.profileImage),
-            kvp("appointmentDuration",  d.appointmentDuration),
-            kvp("bufferTime",           d.bufferTime),
+            kvp("rating", d.rating),
+            kvp("expYears", d.expYears),
+            kvp("patients", d.patients),
+            kvp("about", d.about),
+            kvp("profileImage", d.profileImage),
+            kvp("appointmentDuration", d.appointmentDuration),
+            kvp("bufferTime", d.bufferTime),
             kvp("department", make_document(
-                kvp("name",  d.department.name),
+                kvp("name", d.department.name),
                 kvp("count", d.department.count)
             ))
         );

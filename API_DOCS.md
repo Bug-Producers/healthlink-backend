@@ -96,7 +96,19 @@ Replaces the doctor's full weekly schedule.
 ---
 
 ### `GET /api/doctors/appointments`
-Lists all appointments for the doctor.
+Lists all appointments for the doctor. The returned objects include inline patient details (`patientName`, `patientImage`) and `status`.
+
+---
+
+### `PATCH /api/doctors/appointments/<id>`
+Updates an appointment's status (e.g., Booked=0, Completed=1, Cancelled=2).
+
+**Body:**
+```json
+{
+  "status": 1
+}
+```
 
 ---
 
@@ -120,13 +132,16 @@ Lists all payment records for the doctor.
 ---
 
 ### `GET /api/doctors/revenue`
-Returns total earnings and payment count.
+Returns total earnings, payment count, and an array of daily totals (`dailyBreakdown`) for chart generation.
 
 **Response:**
 ```json
 {
   "totalEarnings": 1200.0,
-  "totalPayments": 30
+  "totalPayments": 30,
+  "dailyBreakdown": [
+    {"date": "2025-04-20", "total": 120.0}
+  ]
 }
 ```
 
@@ -142,7 +157,17 @@ View dynamic system push notifications triggered proactively during patient book
 
 ---
 
+### `PATCH /api/doctors/notifications/<id>`
+Marks a specific notification as read.
+
+---
+
 ## Patient Endpoints
+
+### `GET /api/patients/<id>`
+Fetches the patient profile including Name and Profile Photo.
+
+---
 
 ### `GET /api/patients/doctors`
 Browse all available doctors.
@@ -216,6 +241,19 @@ Rate a doctor after a visit.
 
 ### `GET /api/patients/history`
 View medical history (newest report first — LIFO stack).
+
+---
+
+### `POST /api/patients/history`
+Allows a doctor (or system) to append a diagnosis or prescription report to a patient's history.
+
+**Body:**
+```json
+{
+  "patientId": "patient_uid",
+  "report": "Patient presented with mild fever. Prescribed Paracetamol."
+}
+```
 
 ---
 
