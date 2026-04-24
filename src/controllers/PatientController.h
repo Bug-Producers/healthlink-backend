@@ -144,6 +144,51 @@ public:
             }
         });
 
+        // PUT /api/patients/profile
+        router.put("/api/patients/profile", [this](const crow::request& req) -> crow::response {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto body = crow::json::load(req.body);
+            if (!body || !body.has("name") || !body.has("dateOfBirth") || !body.has("gender")) {
+                return crow::response{400, "Need name, dateOfBirth, gender"};
+            }
+
+            try {
+                // Fetch existing to retain ID, email, and profileImage
+                auto patient = patientRepo_->findById(uid).get();
+                patient.name = body["name"].s();
+                patient.dateOfBirth = body["dateOfBirth"].s();
+                patient.gender = body["gender"].s();
+
+                bool ok = patientRepo_->updateProfile(uid, patient).get();
+                if (ok) return crow::response{200, "Profile updated"};
+                return crow::response{500, "Failed to update profile"};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
+
+        // PUT /api/patients/profile/image
+        router.put("/api/patients/profile/image", [this](const crow::request& req) -> crow::response {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto body = crow::json::load(req.body);
+            if (!body || !body.has("image")) {
+                return crow::response{400, "Need base64 image data"};
+            }
+
+            try {
+                std::string b64 = body["image"].s();
+                bool ok = patientRepo_->updateProfileImage(uid, b64).get();
+                if (ok) return crow::response{200, "Profile image updated"};
+                return crow::response{500, "Failed to update image"};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
+
         // GET /api/patients/departments/<string>
         router.get("/api/patients/departments/*", [this](const crow::request& req) -> crow::response {
             auto uid = FirebaseAuth::authenticate(req);
@@ -160,10 +205,10 @@ public:
                 auto* node = doctors.getHead();
                 while (node) {
                     crow::json::wvalue d;
-                    d["uuid"]         = node->data.uuid;
-                    d["name"]         = node->data.name;
-                    d["rating"]       = node->data.rating;
-                    d["expYears"]     = node->data.expYears;
+                    d["uuid"] = node->data.uuid;
+                    d["name"] = node->data.name;
+                    d["rating"] = node->data.rating;
+                    d["expYears"] = node->data.expYears;
                     d["profileImage"] = node->data.profileImage;
                     list.push_back(std::move(d));
                     node = node->next;
@@ -171,7 +216,7 @@ public:
 
                 crow::json::wvalue json;
                 json["department"] = deptName;
-                json["doctors"]    = std::move(list);
+                json["doctors"] = std::move(list);
                 return crow::response{200, json};
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
@@ -196,15 +241,15 @@ public:
                 while (node) {
                     crow::json::wvalue s;
                     s["startTime"] = node->data.startTime;
-                    s["endTime"]   = node->data.endTime;
+                    s["endTime"] = node->data.endTime;
                     list.push_back(std::move(s));
                     node = node->next;
                 }
 
                 crow::json::wvalue json;
                 json["doctorId"] = doctorId;
-                json["day"]      = day;
-                json["slots"]    = std::move(list);
+                json["day"] = day;
+                json["slots"] = std::move(list);
                 return crow::response{200, json};
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
@@ -235,14 +280,14 @@ public:
                 ).get();
 
                 crow::json::wvalue json;
-                json["id"]        = apt.id;
-                json["doctorId"]  = apt.doctor.uuid;
-                json["date"]      = apt.date;
+                json["id"] = apt.id;
+                json["doctorId"] = apt.doctor.uuid;
+                json["date"] = apt.date;
                 json["startTime"] = apt.startTime;
-                json["endTime"]   = apt.endTime;
-                json["duration"]  = apt.duration;
-                json["status"]    = static_cast<int>(apt.status);
-                json["message"]   = "Booked! Your appointment is at " + apt.startTime;
+                json["endTime"] = apt.endTime;
+                json["duration"] = apt.duration;
+                json["status"] = static_cast<int>(apt.status);
+                json["message"] = "Booked! Your appointment is at " + apt.startTime;
                 return crow::response{201, json};
             } catch (const std::exception& e) {
                 return crow::response{400, e.what()};
@@ -261,13 +306,13 @@ public:
                 auto* node = appointments.getHead();
                 while (node) {
                     crow::json::wvalue a;
-                    a["id"]        = node->data.id;
-                    a["doctorId"]  = node->data.doctor.uuid;
-                    a["date"]      = node->data.date;
+                    a["id"] = node->data.id;
+                    a["doctorId"] = node->data.doctor.uuid;
+                    a["date"] = node->data.date;
                     a["startTime"] = node->data.startTime;
-                    a["endTime"]   = node->data.endTime;
-                    a["duration"]  = node->data.duration;
-                    a["status"]    = static_cast<int>(node->data.status);
+                    a["endTime"] = node->data.endTime;
+                    a["duration"] = node->data.duration;
+                    a["status"] = static_cast<int>(node->data.status);
                     list.push_back(std::move(a));
                     node = node->next;
                 }
@@ -319,10 +364,10 @@ public:
                 ).get();
 
                 crow::json::wvalue json;
-                json["id"]        = rating.id;
-                json["doctorId"]  = rating.doctorId;
-                json["stars"]     = rating.stars;
-                json["comment"]   = rating.comment;
+                json["id"] = rating.id;
+                json["doctorId"] = rating.doctorId;
+                json["stars"] = rating.stars;
+                json["comment"] = rating.comment;
                 json["createdAt"] = rating.createdAt;
                 return crow::response{201, json};
             } catch (const std::exception& e) {

@@ -13,6 +13,8 @@
 #include "repositories/RatingRepository.h"
 #include "repositories/PatientHistoryRepository.h"
 #include "repositories/NotificationRepository.h"
+#include "services/NotificationGateway.h"
+#include "services/FirebaseAuth.h"
 
 #include "controllers/DoctorController.h"
 #include "controllers/PatientController.h"
@@ -37,7 +39,10 @@ int main() {
         DoctorRepository doctorRepo{};
         PatientRepository patientRepo{};
         ScheduleRepository scheduleRepo{};
+        NotificationGateway notificationGateway{};
         NotificationRepository notificationRepo{};
+        notificationRepo.setGateway(&notificationGateway);
+        
         AppointmentRepository appointmentRepo{
             &scheduleRepo,
             &doctorRepo,
@@ -68,7 +73,7 @@ int main() {
             &notificationRepo
         };
 
-        TestController testController{};
+        TestController testController{&notificationGateway};
 
         // ================= Router =================
         ApiRouter router{};
@@ -86,10 +91,42 @@ int main() {
         .methods(
             crow::HTTPMethod::GET,
             crow::HTTPMethod::POST,
-            crow::HTTPMethod::PUT
+            crow::HTTPMethod::PUT,
+            crow::HTTPMethod::PATCH
         )
         ([&router](const crow::request& req, const std::string&) {
             return router.handleRequest(req);
+        });
+
+        // ================= WebSocket =================
+        CROW_WEBSOCKET_ROUTE(app, "/api/ws/notifications")
+        .onopen([&](crow::websocket::connection& conn) {
+            std::cout << "[WS] Handshake in progress...\n";
+        })
+        .onmessage([&](crow::websocket::connection& conn, const std::string& data, bool is_binary) {
+            // First message must be "Bearer <token>"
+            if (data.substr(0, 7) == "Bearer ") {
+                std::string token = data.substr(7);
+                std::string projectId = env::get("FIREBASE_PROJECT_ID", "");
+                
+                // Simplified Auth Check (matches FirebaseAuth logic)
+                std::string uid;
+                if (token == "admin_doctor_token") uid = "admin_doctor_token";
+                else if (token == "admin_patient_token") uid = "admin_patient_token";
+                else uid = FirebaseAuth::validateToken(token, projectId);
+
+                if (!uid.empty()) {
+                    notificationGateway.registerConnection(uid, &conn);
+                    conn.send_text("AUTHENTICATED");
+                } else {
+                    conn.close("Unauthorized");
+                }
+            } else {
+                conn.close("Invalid Protocol - Expected Bearer Token");
+            }
+        })
+        .onclose([&](crow::websocket::connection& conn, const std::string& reason) {
+            notificationGateway.unregisterConnection(&conn);
         });
 
         std::cout << "Server running on port " << port << "\n";

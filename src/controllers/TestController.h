@@ -8,13 +8,17 @@
 
 #include "../core/router/ApiRouter.h"
 #include "../services/MongoService.h"
+#include "../services/NotificationGateway.h"
 
 /**
  * @brief Handles all development and testing endpoints (e.g., seeding the database).
  */
 class TestController {
+private:
+    NotificationGateway* gateway_;
+
 public:
-    TestController() {}
+    TestController(NotificationGateway* gateway) : gateway_(gateway) {}
 
     void registerRoutes(ApiRouter& router) {
         // Dev seed: Injects massive fake environment data natively
@@ -130,6 +134,19 @@ public:
             mongo.replaceOne("patient_history", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("patientId", "admin_patient_token")).view(), adminHist.view(), true);
 
             return crow::response{201, "Seeded 30 fully relational generated records (with Availability & Medical History) + Master Dev Auth Tokens directly to MongoDB!"};
+        });
+
+        // Manual System Alert: Broadcasts to everyone online
+        router.post("/api/dev/alert", [this](const crow::request& req) {
+            auto body = crow::json::load(req.body);
+            if (!body || !body.has("message")) {
+                return crow::response{400, "Need message field"};
+            }
+
+            std::string msg = body["message"].s();
+            gateway_->broadcast(msg);
+            
+            return crow::response{200, "Alert broadcasted"};
         });
     }
 };

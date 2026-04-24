@@ -85,4 +85,47 @@ public:
             return ok;
         });
     }
+
+    /**
+     * @brief Saves updated profile info for a patient.
+     */
+    std::future<bool> updateProfile(const std::string& patientId, const Patient& updated) {
+        return std::async(std::launch::async, [this, patientId, updated]() -> bool {
+            bool ok = mongo_.replaceOne("patients",
+                make_document(kvp("id", patientId)).view(),
+                toBson(updated).view()
+            );
+
+            if (ok) {
+                std::lock_guard<std::mutex> lock{mtx_};
+                cache_[patientId] = updated;
+            }
+            return ok;
+        });
+    }
+
+    /**
+     * @brief Updates the profile image for a patient.
+     * @param patientId Which patient to update.
+     * @param base64ImageData The image encoded as a base64 string.
+     */
+    std::future<bool> updateProfileImage(const std::string& patientId, const std::string& base64ImageData) {
+        return std::async(std::launch::async, [this, patientId, base64ImageData]() -> bool {
+            bool ok = mongo_.updateOne("patients",
+                make_document(kvp("id", patientId)).view(),
+                make_document(kvp("$set", make_document(
+                    kvp("profileImage", base64ImageData)
+                ))).view()
+            );
+
+            if (ok) {
+                std::lock_guard<std::mutex> lock{mtx_};
+                auto it = cache_.find(patientId);
+                if (it != cache_.end()) {
+                    it->second.profileImage = base64ImageData;
+                }
+            }
+            return ok;
+        });
+    }
 };

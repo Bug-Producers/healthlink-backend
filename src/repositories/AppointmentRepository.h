@@ -138,8 +138,8 @@ public:
                 );
             }
 
-            int slotStart   = timeToMinutes(frameStart);
-            int slotEnd     = timeToMinutes(frameEnd);
+            int slotStart = timeToMinutes(frameStart);
+            int slotEnd = timeToMinutes(frameEnd);
 
             // Fetch existing appointments from DB to find the latest booked time in this exact frame
             auto existingDocs = mongo_.findMany("appointments",
@@ -180,14 +180,14 @@ public:
 
             // Build the appointment with the calculated time
             Appointment apt{};
-            apt.id        = generateId();
-            apt.doctor    = doctor;
-            apt.patient   = patient;
-            apt.date      = date;
+            apt.id = generateId();
+            apt.doctor = doctor;
+            apt.patient = patient;
+            apt.date = date;
             apt.startTime = minutesToTime(allocStart);
-            apt.endTime   = minutesToTime(allocEnd);
-            apt.duration  = doctor.appointmentDuration;
-            apt.status    = AppointmentStatus::Booked;
+            apt.endTime = minutesToTime(allocEnd);
+            apt.duration = doctor.appointmentDuration;
+            apt.status = AppointmentStatus::Booked;
 
             // Persist to MongoDB
             mongo_.insertOne("appointments", toBson(apt).view());

@@ -10,6 +10,7 @@
 #include "../models/Notification.h"
 #include "../core/linked_list/LinkedList.h"
 #include "../services/MongoService.h"
+#include "../services/NotificationGateway.h"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -20,6 +21,7 @@ using bsoncxx::builder::basic::make_document;
 class NotificationRepository {
 private:
     MongoService mongo_{"healthlink"};
+    NotificationGateway* gateway_{nullptr};
 
     static std::string generateId() {
         static int counter = 0;
@@ -29,6 +31,10 @@ private:
 
 public:
     NotificationRepository() {}
+
+    void setGateway(NotificationGateway* gateway) {
+        gateway_ = gateway;
+    }
 
     /**
      * @brief Instantly fires off an async alert payload directly into Mongo
@@ -42,7 +48,12 @@ public:
                 kvp("createdAt", "Just now"),
                 kvp("read", false)
             );
-            return mongo_.insertOne("notifications", doc.view());
+            
+            bool ok = mongo_.insertOne("notifications", doc.view());
+            if (ok && gateway_) {
+                gateway_->sendRealTime(userId, message);
+            }
+            return ok;
         });
     }
 

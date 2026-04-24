@@ -169,6 +169,32 @@ Fetches the patient profile including Name and Profile Photo.
 
 ---
 
+### `PUT /api/patients/profile`
+Updates the patient's core profile fields.
+
+**Body:**
+```json
+{
+  "name": "Jane Doe",
+  "dateOfBirth": "1995-10-15",
+  "gender": "Female"
+}
+```
+
+---
+
+### `PUT /api/patients/profile/image`
+Uploads a profile image for the patient as base64.
+
+**Body:**
+```json
+{
+  "image": "<base64_encoded_image_data>"
+}
+```
+
+---
+
 ### `GET /api/patients/doctors`
 Browse all available doctors.
 
@@ -276,3 +302,27 @@ View dynamic push notifications from doctor actions and appointment booking conf
 | **Stack (LIFO)** | Patient medical history — newest report on top |
 | **Unordered Map** | Doctor availability (day → slots), in-memory caches |
 | **Tree** | API endpoint organization (`/api/doctors/profile`) |
+
+---
+
+## Real-Time Notifications (WebSocket)
+
+### `WS /api/ws/notifications`
+Connect to this endpoint for real-time push notifications. 
+
+**Authentication Protocol:**
+1. Open a connection to `ws://host:port/api/ws/notifications`.
+2. Immediately send a text message: `Bearer <your_token>`.
+3. If successful, the server responds with `AUTHENTICATED`.
+4. From then on, any notification pushed to your UID in the database will be sent instantly as a text message over this socket.
+
+**Message Format:**
+Messages are sent as plain text strings (standard push alerts).
+
+**Common Event Types (Examples):**
+| Event Trigger | User Notified | Message Content Example |
+|---------------|---------------|-------------------------|
+| **Patient Booking** | Doctor | "New appointment booked by [Patient Name] for [Date]" |
+| **Doctor Cancellation** | Patient | "Your appointment on [Date] was canceled." |
+| **Appointment Completed** | Patient | "Your appointment on [Date] was marked completed." |
+| **Manual System Alert** | Both | "System maintenance scheduled for 10:00 PM." |
