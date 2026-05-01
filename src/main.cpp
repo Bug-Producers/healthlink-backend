@@ -1,6 +1,5 @@
 #include <crow.h>
 
-#include "core/router/ApiRouter.h"
 #include "utils/env_loader.h"
 
 #include <mongocxx/instance.hpp>
@@ -25,7 +24,6 @@
 
 int main() {
     try {
-
         env::load();
         MongoConnection::getInstance();
 
@@ -42,12 +40,13 @@ int main() {
         NotificationGateway notificationGateway{};
         NotificationRepository notificationRepo{};
         notificationRepo.setGateway(&notificationGateway);
-        
+
         AppointmentRepository appointmentRepo{
             &scheduleRepo,
             &doctorRepo,
             &notificationRepo
         };
+
         PaymentRepository paymentRepo{};
         RatingRepository ratingRepo{};
         PatientHistoryRepository historyRepo{};
@@ -75,42 +74,58 @@ int main() {
 
         TestController testController{&notificationGateway};
 
-        // ================= Router =================
-        ApiRouter router{};
-
-        router.get("/", [](const crow::request&) {
+        // ================= HTTP Routes =================
+        CROW_ROUTE(app, "/")
+        ([]() {
             return crow::response(200, "HealthLink API is running perfectly!");
         });
 
-        doctorController.registerRoutes(router);
-        patientController.registerRoutes(router);
-        testController.registerRoutes(router);
+        doctorController.registerRoutes(app);
+        patientController.registerRoutes(app);
+        testController.registerRoutes(app);
 
+        CROW_ROUTE(app, "/api/is-it-doctor").methods(crow::HTTPMethod::POST)
+        ([&doctorRepo](const crow::request& req) {
+            auto body = crow::json::load(req.body);
 
-        CROW_ROUTE(app, "/<path>")
-        .methods(
-            crow::HTTPMethod::GET,
-            crow::HTTPMethod::POST,
-            crow::HTTPMethod::PUT,
-            crow::HTTPMethod::PATCH
-        )
-        ([&router](const crow::request& req, const std::string&) {
-            return router.handleRequest(req);
+            if (!body || !body.has("uuid")) {
+                return crow::response{400, "Need uuid"};
+            }
+
+            std::string uuid = body["uuid"].s();
+
+            try {
+                auto doctor = doctorRepo.findById(uuid).get();
+
+                crow::json::wvalue json;
+                json["isDoctor"] = true;
+
+                return crow::response{200, json};
+            } catch (...) {
+                crow::json::wvalue json;
+                json["isDoctor"] = false;
+
+                return crow::response{200, json};
+            }
         });
 
         // ================= WebSocket =================
         CROW_WEBSOCKET_ROUTE(app, "/api/ws/notifications")
         .onopen([&](crow::websocket::connection& conn) {
-            std::cout << "[WS] Handshake in progress...\n";
+            std::cout << "[WS] Connection opened\n";
         })
-        .onmessage([&](crow::websocket::connection& conn, const std::string& data, bool is_binary) {
-            // First message must be "Bearer <token>"
+
+        .onmessage([&](crow::websocket::connection& conn,
+                       const std::string& data,
+                       bool is_binary) {
+
             if (data.substr(0, 7) == "Bearer ") {
+
                 std::string token = data.substr(7);
                 std::string projectId = env::get("FIREBASE_PROJECT_ID", "");
-                
-                // Simplified Auth Check (matches FirebaseAuth logic)
+
                 std::string uid;
+
                 if (token == "admin_doctor_token") uid = "admin_doctor_token";
                 else if (token == "admin_patient_token") uid = "admin_patient_token";
                 else uid = FirebaseAuth::validateToken(token, projectId);
@@ -121,14 +136,21 @@ int main() {
                 } else {
                     conn.close("Unauthorized");
                 }
+
             } else {
                 conn.close("Invalid Protocol - Expected Bearer Token");
             }
         })
-        .onclose([&](crow::websocket::connection& conn, const std::string& reason) {
+
+        .onclose([&](crow::websocket::connection& conn,
+                     const std::string& reason,
+                     uint16_t code) {
+
+            std::cout << "[WS] Closed: " << reason << " code=" << code << "\n";
             notificationGateway.unregisterConnection(&conn);
         });
 
+        // ================= Run Server =================
         std::cout << "Server running on port " << port << "\n";
 
         app.port(port)

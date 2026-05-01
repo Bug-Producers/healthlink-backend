@@ -6,7 +6,6 @@
 #include <bsoncxx/builder/basic/kvp.hpp>
 #include <string>
 
-#include "../core/router/ApiRouter.h"
 #include "../services/MongoService.h"
 #include "../services/NotificationGateway.h"
 
@@ -20,9 +19,12 @@ private:
 public:
     TestController(NotificationGateway* gateway) : gateway_(gateway) {}
 
-    void registerRoutes(ApiRouter& router) {
+    template<typename App>
+    void registerRoutes(App& app) {
         // Dev seed: Injects massive fake environment data natively
-        router.post("/api/dev/seed", [](const crow::request&) {
+        CROW_ROUTE(app, "/api/dev/seed")
+        .methods(crow::HTTPMethod::POST)
+        ([](const crow::request&) {
             MongoService mongo;
 
             // Generate 30 fake records (15 Doctors, 15 Patients)
@@ -137,7 +139,9 @@ public:
         });
 
         // Manual System Alert: Broadcasts to everyone online
-        router.post("/api/dev/alert", [this](const crow::request& req) {
+        CROW_ROUTE(app, "/api/dev/alert")
+        .methods(crow::HTTPMethod::POST)
+        ([this](const crow::request& req) {
             auto body = crow::json::load(req.body);
             if (!body || !body.has("message")) {
                 return crow::response{400, "Need message field"};

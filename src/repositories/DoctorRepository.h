@@ -80,6 +80,25 @@ public:
     DoctorRepository() {}
 
     /**
+     * @brief Creates a new doctor profile.
+     */
+    std::future<bool> createDoctor(const Doctor& newDoctor) {
+        return std::async(std::launch::async, [this, newDoctor]() -> bool {
+            bool ok = mongo_.replaceOne("doctors",
+                make_document(kvp("uuid", newDoctor.uuid)).view(),
+                toBson(newDoctor).view(),
+                true // upsert
+            );
+
+            if (ok) {
+                std::lock_guard<std::mutex> lock{mtx_};
+                cache_[newDoctor.uuid] = newDoctor;
+            }
+            return ok;
+        });
+    }
+
+    /**
      * @brief Finds a single doctor by UUID.
      */
     std::future<Doctor> findById(const std::string& doctorId) {

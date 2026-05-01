@@ -11,7 +11,6 @@
 #include "../repositories/PaymentRepository.h"
 #include "../repositories/RatingRepository.h"
 #include "../repositories/NotificationRepository.h"
-#include "../core/router/ApiRouter.h"
 
 /**
  * @brief Handles all API routes that doctors interact with.
@@ -46,12 +45,55 @@ public:
     }
 
     /**
-     * @brief Hooks up all doctor-related routes to the ApiRouter.
+     * @brief Hooks up all doctor-related routes to the app.
      */
-    void registerRoutes(ApiRouter& router) {
+    template<typename App>
+    void registerRoutes(App& app) {
+
+        // POST /api/doctors/register
+        CROW_ROUTE(app, "/api/doctors/register")
+        .methods(crow::HTTPMethod::POST)
+        ([this](const crow::request& req) {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto body = crow::json::load(req.body);
+            if (!body) return crow::response{400, "Invalid JSON body"};
+
+            try {
+                Doctor doctor{};
+                doctor.uuid = uid;
+
+                if (body.has("name")) doctor.name = body["name"].s();
+                if (body.has("city")) doctor.city = body["city"].s();
+                if (body.has("country")) doctor.country = body["country"].s();
+                if (body.has("hospitalOrClinicName")) doctor.hospitalOrClinicName = body["hospitalOrClinicName"].s();
+                if (body.has("about")) doctor.about = body["about"].s();
+                if (body.has("appointmentDuration")) doctor.appointmentDuration = body["appointmentDuration"].i();
+                if (body.has("bufferTime")) doctor.bufferTime = body["bufferTime"].i();
+
+                if (body.has("department") && body["department"].has("name")) {
+                    doctor.department.name = body["department"]["name"].s();
+                    doctor.department.count = 1;
+                }
+
+                doctor.rating = 0;
+                doctor.expYears = body.has("expYears") ? body["expYears"].i() : 0;
+                doctor.patients = 0;
+                doctor.profileImage = "";
+
+                bool ok = doctorRepo_->createDoctor(doctor).get();
+                if (ok) return crow::response{201, "Doctor profile created"};
+                return crow::response{500, "Failed to create profile"};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
 
         // GET /api/doctors/profile
-        router.get("/api/doctors/profile", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/profile")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -79,7 +121,9 @@ public:
         });
 
         // PUT /api/doctors/profile
-        router.put("/api/doctors/profile", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/profile")
+        .methods(crow::HTTPMethod::PUT)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -106,7 +150,9 @@ public:
         });
 
         // PUT /api/doctors/profile/image
-        router.put("/api/doctors/profile/image", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/profile/image")
+        .methods(crow::HTTPMethod::PUT)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -126,7 +172,9 @@ public:
         });
 
         // GET /api/doctors/schedule
-        router.get("/api/doctors/schedule", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/schedule")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -157,7 +205,9 @@ public:
         });
 
         // PUT /api/doctors/schedule
-        router.put("/api/doctors/schedule", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/schedule")
+        .methods(crow::HTTPMethod::PUT)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -193,7 +243,9 @@ public:
         });
 
         // GET /api/doctors/appointments
-        router.get("/api/doctors/appointments", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/appointments")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -231,13 +283,11 @@ public:
         });
 
         // PATCH /api/doctors/appointments/<id>
-        router.patch("/api/doctors/appointments/*", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/appointments/<string>")
+        .methods(crow::HTTPMethod::PATCH)
+        ([this](const crow::request& req, std::string aptId) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
-            
-            auto segments = StringUtils::split(req.url);
-            if (segments.size() < 5) return crow::response(400);
-            std::string aptId = segments.back();
 
             auto body = crow::json::load(req.body);
             if (!body || !body.has("status")) return crow::response{400, "Need status integer"};
@@ -255,7 +305,9 @@ public:
         });
 
         // POST /api/doctors/payments
-        router.post("/api/doctors/payments", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/payments")
+        .methods(crow::HTTPMethod::POST)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -286,7 +338,9 @@ public:
         });
 
         // GET /api/doctors/payments
-        router.get("/api/doctors/payments", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/payments")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -315,7 +369,9 @@ public:
         });
 
         // GET /api/doctors/revenue
-        router.get("/api/doctors/revenue", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/revenue")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -341,7 +397,9 @@ public:
         });
 
         // GET /api/doctors/ratings
-        router.get("/api/doctors/ratings", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/ratings")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -372,7 +430,9 @@ public:
         });
 
         // GET /api/doctors/notifications
-        router.get("/api/doctors/notifications", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/notifications")
+        .methods(crow::HTTPMethod::GET)
+        ([this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -400,13 +460,11 @@ public:
         });
 
         // PATCH /api/doctors/notifications/<id>
-        router.patch("/api/doctors/notifications/*", [this](const crow::request& req) -> crow::response {
+        CROW_ROUTE(app, "/api/doctors/notifications/<string>")
+        .methods(crow::HTTPMethod::PATCH)
+        ([this](const crow::request& req, std::string notifId) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
-
-            auto segments = StringUtils::split(req.url);
-            if (segments.size() < 5) return crow::response(400);
-            std::string notifId = segments.back();
 
             try {
                 bool ok = notificationRepo_->markAsRead(notifId).get();

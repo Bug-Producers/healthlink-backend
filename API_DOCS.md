@@ -18,7 +18,52 @@ The token's `sub` (subject) claim is used as the user ID for all operations.
 
 ---
 
+## Shared Endpoints
+
+### `POST /api/is-it-doctor`
+Checks whether a given user is a doctor.
+
+**Body:**
+```json
+{
+  "uuid": "doctor_or_patient_uid"
+}
+```
+
+**Response:**
+```json
+{
+  "isDoctor": true
+}
+```
+
+---
+
 ## Doctor Endpoints
+
+### `POST /api/doctors/register`
+Registers a new doctor profile after Firebase authentication.
+
+**Body:**
+```json
+{
+  "name": "Dr. Smith",
+  "city": "Cairo",
+  "country": "Egypt",
+  "hospitalOrClinicName": "Cairo Medical Center",
+  "about": "Cardiologist with 10 years exp",
+  "appointmentDuration": 30,
+  "bufferTime": 10,
+  "department": {
+    "name": "Cardiology"
+  },
+  "expYears": 10
+}
+```
+
+**Response:** `201` on success | `400` invalid body | `401` if unauthorized | `500` server error
+
+---
 
 ### `GET /api/doctors/profile`
 Returns the authenticated doctor's profile.
@@ -266,7 +311,10 @@ Rate a doctor after a visit.
 ---
 
 ### `GET /api/patients/history`
-View medical history (newest report first — LIFO stack).
+View medical history (newest report first — LIFO stack). By default, fetching history without a query parameter assumes the calling token belongs to a Patient trying to fetch their own history.
+
+**Query Parameters:**
+* `patientId` (optional): If a Doctor or System is trying to fetch a patient's history, they must supply the `patientId` query parameter (e.g. `?patientId=some_uid`).
 
 ---
 
@@ -301,7 +349,6 @@ View dynamic push notifications from doctor actions and appointment booking conf
 | **Queue (FIFO)** | Patient bookings per time slot — first-come-first-served |
 | **Stack (LIFO)** | Patient medical history — newest report on top |
 | **Unordered Map** | Doctor availability (day → slots), in-memory caches |
-| **Tree** | API endpoint organization (`/api/doctors/profile`) |
 
 ---
 

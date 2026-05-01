@@ -25,30 +25,31 @@ namespace FirebaseAuth {
             else if (c == '_') c = '/';
         }
 
-        // Pad to a multiple of 4 (base64 requires it)
+        // Pad to a multiple of 4
         while (base64.size() % 4 != 0) {
             base64 += '=';
         }
 
-        // Standard base64 alphabet
         const std::string chars =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
         std::string decoded;
-        int val = 0;
-        int bits = -8;
+        unsigned int val = 0;
+        int bits = 0;
 
         for (unsigned char c : base64) {
             if (c == '=') break;
             auto pos = chars.find(c);
             if (pos == std::string::npos) continue;
 
-            val = (val << 6) + static_cast<int>(pos);
+            val = (val << 6) | (pos & 0x3F);
             bits += 6;
 
-            if (bits >= 0) {
-                decoded += static_cast<char>((val >> bits) & 0xFF);
+            if (bits >= 8) {
                 bits -= 8;
+                decoded += static_cast<char>((val >> bits) & 0xFF);
+                // Clear the bits we just extracted to prevent overflow
+                val &= (1 << bits) - 1;
             }
         }
 
@@ -63,18 +64,26 @@ namespace FirebaseAuth {
         auto pos = json.find(search);
         if (pos == std::string::npos) return "";
 
-        // Skip past the key and the colon
         pos = json.find(':', pos);
         if (pos == std::string::npos) return "";
         pos++;
 
-        // Skip whitespace and opening quotes
-        while (pos < json.size() && (json[pos] == ' ' || json[pos] == '"')) pos++;
+        // Skip spaces
+        while (pos < json.size() && json[pos] == ' ') pos++;
+        if (pos >= json.size()) return "";
 
-        // Read until we hit a closing quote, comma, or end of object
         std::string value;
-        while (pos < json.size() && json[pos] != '"' && json[pos] != ',' && json[pos] != '}') {
-            value += json[pos++];
+        if (json[pos] == '"') {
+            // It's a string
+            pos++;
+            while (pos < json.size() && json[pos] != '"') {
+                value += json[pos++];
+            }
+        } else {
+            // It's a number, bool, etc.
+            while (pos < json.size() && json[pos] != ',' && json[pos] != '}' && json[pos] != ' ') {
+                value += json[pos++];
+            }
         }
 
         return value;
@@ -108,18 +117,23 @@ namespace FirebaseAuth {
         // Decode the payload (the middle part)
         std::string payload = base64UrlDecode(token.substr(firstDot + 1, secondDot - firstDot - 1));
 
+        if (payload.empty()) {
+            std::cerr << "[Auth] Failed to decode JWT payload\n";
+            return "";
+        }
+
         // Check the issuer — should be Firebase's token server for our project
         std::string expectedIssuer = "https://securetoken.google.com/" + projectId;
         std::string iss = extractJsonField(payload, "iss");
         if (iss != expectedIssuer) {
-            std::cerr << "Token issuer mismatch: got " << iss << std::endl;
+            std::cerr << "[Auth] Token issuer mismatch: expected " << expectedIssuer << " but got " << iss << std::endl;
             return "";
         }
 
         // Check the audience — should be our project ID
         std::string aud = extractJsonField(payload, "aud");
         if (aud != projectId) {
-            std::cerr << "Token audience mismatch: got " << aud << std::endl;
+            std::cerr << "[Auth] Token audience mismatch: expected " << projectId << " but got " << aud << std::endl;
             return "";
         }
 
@@ -129,13 +143,24 @@ namespace FirebaseAuth {
             std::chrono::system_clock::now().time_since_epoch()
         ).count();
 
+        if (exp == 0) {
+            std::cerr << "[Auth] Token 'exp' claim missing or invalid\n";
+            return "";
+        }
+
         if (exp < now) {
-            std::cerr << "Token has expired" << std::endl;
+            std::cerr << "[Auth] Token has expired (exp=" << exp << ", now=" << now << ")" << std::endl;
             return "";
         }
 
         // Everything looks good — return the user's Firebase UID
-        return extractJsonField(payload, "sub");
+        std::string uid = extractJsonField(payload, "sub");
+        if (uid.empty()) {
+            std::cerr << "[Auth] Token 'sub' claim missing\n";
+            return "";
+        }
+
+        return uid;
     }
 
     /**
