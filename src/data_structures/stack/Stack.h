@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include "StackNode.h"
+#include "../../utils/CollectionUtils.h"
 
 /**
  * @brief A standard LIFO (Last-In, First-Out) Stack using linked nodes.
@@ -32,6 +33,16 @@ public:
         while (!isEmpty()) {
             pop();
         }
+    }
+
+    Stack(const Stack& other) : topNode(CollectionUtils::cloneNodes(other.topNode)), count(other.count) {}
+
+    Stack& operator=(const Stack& other) {
+        if (this == &other) return *this;
+        while (!isEmpty()) pop();
+        topNode = CollectionUtils::cloneNodes(other.topNode);
+        count = other.count;
+        return *this;
     }
 
     /**
@@ -81,11 +92,4 @@ public:
         return topNode == nullptr;
     }
 
-    /**
-     * @brief Gets the total number of items currently in the stack.
-     * @return The size of the stack.
-     */
-    size_t size() const {
-        return count;
-    }
 };

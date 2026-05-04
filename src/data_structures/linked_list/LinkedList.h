@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include "Node.h"
+#include "../../utils/CollectionUtils.h"
 
 /**
  * @brief A simple singly linked list template class.
@@ -35,28 +36,7 @@ public:
      *   LinkedList<int> copy = original; // Safely clones all nodes natively
      * @endcode
      */
-    LinkedList(const LinkedList& other) {
-        head = nullptr;
-        count = 0;
-        
-        if (!other.head) return;
-        
-        Node<T>* otherCurrent = other.head;
-        Node<T>* tail = nullptr;
-        
-        while (otherCurrent != nullptr) {
-            Node<T>* newNode = new Node<T>(otherCurrent->data, nullptr);
-            if (!head) {
-                head = newNode;
-                tail = newNode;
-            } else {
-                tail->next = newNode;
-                tail = newNode;
-            }
-            count++;
-            otherCurrent = otherCurrent->next;
-        }
-    }
+    LinkedList(const LinkedList& other) : head(CollectionUtils::cloneNodes(other.head)), count(other.count) {}
 
     /**
      * @brief Copy Assignment Operator.
@@ -72,34 +52,14 @@ public:
      */
     LinkedList& operator=(const LinkedList& other) {
         if (this == &other) return *this;
-
         Node<T>* current = head;
         while (current != nullptr) {
             Node<T>* nextNode = current->next;
             delete current;
             current = nextNode;
         }
-        
-        head = nullptr;
-        count = 0;
-
-        if (!other.head) return *this;
-        
-        Node<T>* otherCurrent = other.head;
-        Node<T>* tail = nullptr;
-        
-        while (otherCurrent != nullptr) {
-            Node<T>* newNode = new Node<T>(otherCurrent->data, nullptr);
-            if (!head) {
-                head = newNode;
-                tail = newNode;
-            } else {
-                tail->next = newNode;
-                tail = newNode;
-            }
-            count++;
-            otherCurrent = otherCurrent->next;
-        }
+        head = CollectionUtils::cloneNodes(other.head);
+        count = other.count;
         return *this;
     }
 
@@ -134,44 +94,6 @@ public:
     }
 
     /**
-     * @brief Removes the first element from the list.
-     * @throws std::out_of_range If the list is empty.
-     */
-    void pop() {
-        if (isEmpty()) {
-            throw std::out_of_range("List is empty");
-        }
-        Node<T>* temp = head;
-        head = head->next;
-        delete temp;
-        count--;
-    }
-
-    /**
-     * @brief Retrieves the data of the first element.
-     * @return Reference to the first element's data.
-     * @throws std::out_of_range If the list is empty.
-     */
-    T& peek() {
-        if (isEmpty()) {
-            throw std::out_of_range("List is empty");
-        }
-        return head->data;
-    }
-
-    /**
-     * @brief Retrieves the data of the first element (const version).
-     * @return Const reference to the first element's data.
-     * @throws std::out_of_range If the list is empty.
-     */
-    const T& peek() const {
-        if (isEmpty()) {
-            throw std::out_of_range("List is empty");
-        }
-        return head->data;
-    }
-
-    /**
      * @brief Checks if the list is empty.
      * @return True if the list contains no elements, false otherwise.
      */
@@ -179,11 +101,4 @@ public:
         return head == nullptr;
     }
 
-    /**
-     * @brief Returns the total number of items in the list.
-     * @return The size of the list.
-     */
-    size_t size() const {
-        return count;
-    }
 };

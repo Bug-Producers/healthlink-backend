@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../core/queue/Queue.h"
+#include "../data_structures/queue/Queue.h"
 #include "Patient.h"
 
 /**

@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include "QueueNode.h"
+#include "../../utils/CollectionUtils.h"
 
 /**
  * @brief A standard FIFO (First-In, First-Out) Queue using linked nodes.
@@ -25,6 +26,16 @@ public:
         frontNode = nullptr;
         backNode = nullptr;
         count = 0;
+    }
+
+    Queue(const Queue& other) : frontNode(CollectionUtils::cloneNodes(other.frontNode, &backNode)), count(other.count) {}
+
+    Queue& operator=(const Queue& other) {
+        if (this == &other) return *this;
+        while (!isEmpty()) pop();
+        frontNode = CollectionUtils::cloneNodes(other.frontNode, &backNode);
+        count = other.count;
+        return *this;
     }
 
     /**
@@ -74,18 +85,6 @@ public:
     }
 
     /**
-     * @brief Retrieves the item at the front of the queue.
-     * @return Reference to the front item.
-     * @throws std::out_of_range If the queue is empty.
-     */
-    T& front() {
-        if (isEmpty()) {
-            throw std::out_of_range("Cannot look at the front of an empty queue!");
-        }
-        return frontNode->data;
-    }
-
-    /**
      * @brief Checks if the queue is currently empty.
      * @return True if the queue has no items, false otherwise.
      */
@@ -93,11 +92,4 @@ public:
         return frontNode == nullptr;
     }
 
-    /**
-     * @brief Gets the total number of items currently in the queue.
-     * @return The size of the queue.
-     */
-    size_t size() const {
-        return count;
-    }
 };

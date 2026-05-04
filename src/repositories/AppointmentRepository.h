@@ -12,8 +12,8 @@
 
 #include "../models/Appointment.h"
 #include "../models/WeeklySchedule.h"
-#include "../core/linked_list/LinkedList.h"
-#include "../core/queue/Queue.h"
+#include "../data_structures/linked_list/LinkedList.h"
+#include "../data_structures/queue/Queue.h"
 #include "../services/MongoService.h"
 #include "ScheduleRepository.h"
 #include "DoctorRepository.h"
@@ -45,10 +45,12 @@ private:
     }
 
     /**
-     * @brief Turns "10:30" into 630.
+     * @brief Turns "10:30" or "9:30" into minutes (e.g., 630 or 570).
      */
     static int timeToMinutes(const std::string& time) {
-        return std::stoi(time.substr(0, 2)) * 60 + std::stoi(time.substr(3, 2));
+        auto delimPos = time.find(':');
+        if (delimPos == std::string::npos) return 0;
+        return std::stoi(time.substr(0, delimPos)) * 60 + std::stoi(time.substr(delimPos + 1));
     }
 
     /**

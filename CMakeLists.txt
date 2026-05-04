@@ -39,12 +39,12 @@ add_executable(healthlink_backend
         src/models/Rating.h
         src/models/TimeSlot.h
         src/models/WeeklySchedule.h
-        src/core/linked_list/LinkedList.h
-        src/core/linked_list/Node.h
-        src/core/queue/Queue.h
-        src/core/queue/QueueNode.h
-        src/core/stack/Stack.h
-        src/core/stack/StackNode.h
+        src/data_structures/linked_list/LinkedList.h
+        src/data_structures/linked_list/Node.h
+        src/data_structures/queue/Queue.h
+        src/data_structures/queue/QueueNode.h
+        src/data_structures/stack/Stack.h
+        src/data_structures/stack/StackNode.h
         src/repositories/DoctorRepository.h
         src/repositories/PatientRepository.h
         src/repositories/ScheduleRepository.h

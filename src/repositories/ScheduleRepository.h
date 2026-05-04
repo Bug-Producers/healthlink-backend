@@ -12,7 +12,8 @@
 
 #include "../models/WeeklySchedule.h"
 #include "../models/TimeSlot.h"
-#include "../core/linked_list/LinkedList.h"
+#include "../data_structures/linked_list/LinkedList.h"
+#include "../data_structures/queue/Queue.h"
 #include "../services/MongoService.h"
 
 using bsoncxx::builder::basic::kvp;

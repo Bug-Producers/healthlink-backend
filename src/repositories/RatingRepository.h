@@ -11,7 +11,7 @@
 #include <bsoncxx/builder/basic/kvp.hpp>
 
 #include "../models/Rating.h"
-#include "../core/linked_list/LinkedList.h"
+#include "../data_structures/linked_list/LinkedList.h"
 #include "../services/MongoService.h"
 
 using bsoncxx::builder::basic::kvp;

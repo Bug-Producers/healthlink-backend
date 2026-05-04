@@ -11,7 +11,7 @@
 #include <bsoncxx/builder/basic/array.hpp>
 
 #include "../models/PatientHistory.h"
-#include "../core/stack/Stack.h"
+#include "../data_structures/stack/Stack.h"
 #include "../services/MongoService.h"
 
 using bsoncxx::builder::basic::kvp;
@@ -31,20 +31,32 @@ private:
      */
     PatientHistory fromBson(bsoncxx::document::view doc) {
         PatientHistory ph{};
-        ph.id = std::string{doc["id"].get_string().value};
-        ph.patientId = std::string{doc["patientId"].get_string().value};
+        
+        if (doc["id"]) {
+            ph.id = std::string{doc["id"].get_string().value};
+        }
+        
+        if (doc["patientId"]) {
+            ph.patientId = std::string{doc["patientId"].get_string().value};
+        }
 
-        if (doc.find("medicalReports") != doc.end()) {
+        if (doc["medicalReports"]) {
             // Collect into a temporary list first
             std::vector<std::string> temp;
             for (auto& report : doc["medicalReports"].get_array().value) {
-                temp.push_back(std::string{report.get_string().value});
+                if (report.type() == bsoncxx::type::k_string) {
+                    temp.push_back(std::string{report.get_string().value});
+                }
             }
 
             // Push in reverse so the last one ends up on top
             for (auto it = temp.rbegin(); it != temp.rend(); ++it) {
                 ph.medicalReports.push(*it);
             }
+        }
+
+        if (ph.id.empty() && !ph.patientId.empty()) {
+            ph.id = "hist_" + ph.patientId;
         }
 
         return ph;
@@ -118,15 +130,11 @@ public:
                 mongo_.insertOne("patient_history", doc.view());
             }
 
-            // Push onto the in-memory Stack too
+            // Push onto the in-memory Stack if it is already loaded
             std::lock_guard<std::mutex> lock{mtx_};
-            if (cache_.find(patientId) == cache_.end()) {
-                PatientHistory ph{};
-                ph.id        = "hist_" + patientId;
-                ph.patientId = patientId;
-                cache_[patientId] = ph;
+            if (cache_.find(patientId) != cache_.end()) {
+                cache_[patientId].medicalReports.push(report);
             }
-            cache_[patientId].medicalReports.push(report);
 
             return true;
         });

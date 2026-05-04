@@ -8,7 +8,7 @@
 #include <bsoncxx/builder/basic/kvp.hpp>
 
 #include "../models/Notification.h"
-#include "../core/linked_list/LinkedList.h"
+#include "../data_structures/linked_list/LinkedList.h"
 #include "../services/MongoService.h"
 #include "../services/NotificationGateway.h"
 

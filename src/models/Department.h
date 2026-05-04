@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../core/linked_list/LinkedList.h"
+#include "../data_structures/linked_list/LinkedList.h"
 
 /**
  * @brief Represents a medical department or specialty in a clinic.

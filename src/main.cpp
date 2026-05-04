@@ -1,5 +1,5 @@
 #include <crow.h>
-
+#include <crow/middlewares/cors.h>
 #include "utils/env_loader.h"
 
 #include <mongocxx/instance.hpp>
@@ -31,7 +31,14 @@ int main() {
 
         std::cout << "Starting HealthLink Core Environment...\n";
 
-        crow::SimpleApp app;
+        crow::App<crow::CORSHandler> app;
+
+        // Configure CORS rules
+        auto& cors = app.get_middleware<crow::CORSHandler>();
+        cors.global()
+            .headers("*")
+            .methods(crow::HTTPMethod::POST, crow::HTTPMethod::GET, crow::HTTPMethod::PUT, crow::HTTPMethod::PATCH, crow::HTTPMethod::Delete, crow::HTTPMethod::OPTIONS)
+            .origin("*");
 
         // ================= Repositories =================
         DoctorRepository doctorRepo{};
@@ -153,7 +160,8 @@ int main() {
         // ================= Run Server =================
         std::cout << "Server running on port " << port << "\n";
 
-        app.port(port)
+        app.bindaddr("0.0.0.0")
+           .port(port)
            .multithreaded()
            .run();
 

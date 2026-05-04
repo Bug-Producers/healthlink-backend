@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../core/stack/Stack.h"
+#include "../data_structures/stack/Stack.h"
 
 /**
  * @brief Represents the medical history of a specific patient.

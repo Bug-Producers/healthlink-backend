@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/linked_list/LinkedList.h"
+#include "../data_structures/linked_list/LinkedList.h"
 #include "TimeSlot.h"
 
 /**
