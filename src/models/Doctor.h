@@ -21,6 +21,4 @@ struct Doctor {
     std::string about;                  // Biography or summary profile of the doctor
     std::string profileImage;           // URL or path to the doctor's profile image
     Department department;              // The department or specialty the doctor belongs to
-    int appointmentDuration;            // Average duration of a standard appointment (in minutes)
-    int bufferTime;                     // Buffer break time between appointments (in minutes)
 };

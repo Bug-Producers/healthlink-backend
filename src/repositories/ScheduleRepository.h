@@ -34,6 +34,13 @@ private:
         WeeklySchedule ws{};
         ws.doctorId = std::string{doc["doctorId"].get_string().value};
 
+        if (doc.find("appointmentDuration") != doc.end()) {
+            ws.appointmentDuration = doc["appointmentDuration"].get_int32().value;
+        }
+        if (doc.find("bufferTime") != doc.end()) {
+            ws.bufferTime = doc["bufferTime"].get_int32().value;
+        }
+
         if (doc.find("availability") != doc.end()) {
             auto avail = doc["availability"].get_document().view();
 
@@ -64,6 +71,8 @@ private:
     bsoncxx::document::value toBson(const WeeklySchedule& ws) {
         bsoncxx::builder::basic::document builder{};
         builder.append(kvp("doctorId", ws.doctorId));
+        builder.append(kvp("appointmentDuration", ws.appointmentDuration));
+        builder.append(kvp("bufferTime", ws.bufferTime));
 
         bsoncxx::builder::basic::document availDoc{};
         for (auto& [dayName, slotList] : ws.availability) {

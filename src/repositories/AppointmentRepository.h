@@ -117,6 +117,7 @@ public:
     ) {
         return std::async(std::launch::async, [=, this]() -> Appointment {
             Doctor doctor = doctorRepo_->findById(doctorId).get();
+            WeeklySchedule schedule = scheduleRepo_->getSchedule(doctorId).get();
 
             // Find available slots for this day
             auto slots = scheduleRepo_->getAvailableSlots(doctorId, dayOfWeek).get();
@@ -168,10 +169,10 @@ public:
             int allocStart = maxEndTimeMinutes;
             if (maxEndTimeMinutes > slotStart) {
                 // Add the doctor's buffer time since this isn't the very first appt in the slot
-                allocStart += doctor.bufferTime;
+                allocStart += schedule.bufferTime;
             }
 
-            int allocEnd   = allocStart + doctor.appointmentDuration;
+            int allocEnd   = allocStart + schedule.appointmentDuration;
 
             // Make sure we haven't run past the end of the frame
             if (allocEnd > slotEnd) {
@@ -186,7 +187,7 @@ public:
             apt.date = date;
             apt.startTime = minutesToTime(allocStart);
             apt.endTime = minutesToTime(allocEnd);
-            apt.duration = doctor.appointmentDuration;
+            apt.duration = schedule.appointmentDuration;
             apt.status = AppointmentStatus::Booked;
 
             // Persist to MongoDB

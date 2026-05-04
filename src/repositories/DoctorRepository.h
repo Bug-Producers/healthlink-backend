@@ -39,8 +39,6 @@ private:
         d.patients = doc["patients"].get_int32().value;
         d.about = std::string{doc["about"].get_string().value};
         d.profileImage = std::string{doc["profileImage"].get_string().value};
-        d.appointmentDuration = doc["appointmentDuration"].get_int32().value;
-        d.bufferTime = doc["bufferTime"].get_int32().value;
 
         // Unpack the nested department
         if (doc.find("department") != doc.end()) {
@@ -67,8 +65,6 @@ private:
             kvp("patients", d.patients),
             kvp("about", d.about),
             kvp("profileImage", d.profileImage),
-            kvp("appointmentDuration", d.appointmentDuration),
-            kvp("bufferTime", d.bufferTime),
             kvp("department", make_document(
                 kvp("name", d.department.name),
                 kvp("count", d.department.count)

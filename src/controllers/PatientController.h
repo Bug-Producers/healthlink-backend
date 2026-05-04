@@ -95,6 +95,7 @@ public:
             try {
                 auto doctor = doctorRepo_->findById(doctorId).get();
                 auto avg    = ratingRepo_->getAverageRating(doctorId).get();
+                auto schedule = scheduleRepo_->getSchedule(doctorId).get();
 
                 crow::json::wvalue json;
                 json["uuid"] = doctor.uuid;
@@ -107,8 +108,8 @@ public:
                 json["patients"] = doctor.patients;
                 json["about"] = doctor.about;
                 json["profileImage"] = doctor.profileImage;
-                json["appointmentDuration"] = doctor.appointmentDuration;
-                json["bufferTime"] = doctor.bufferTime;
+                json["appointmentDuration"] = schedule.appointmentDuration;
+                json["bufferTime"] = schedule.bufferTime;
                 json["department"]["name"] = doctor.department.name;
                 json["department"]["count"] = doctor.department.count;
                 return crow::response{200, json};
@@ -373,10 +374,8 @@ public:
             }
         });
 
-        // GET /api/patients/history
-        CROW_ROUTE(app, "/api/patients/history")
-        .methods(crow::HTTPMethod::GET)
-        ([this](const crow::request& req) {
+        // GET /api/patients/history (and aliases)
+        auto getHistoryHandler = [this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -405,12 +404,14 @@ public:
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
             }
-        });
+        };
 
-        // POST /api/patients/history
-        CROW_ROUTE(app, "/api/patients/history")
-        .methods(crow::HTTPMethod::POST)
-        ([this](const crow::request& req) {
+        CROW_ROUTE(app, "/api/patients/history").methods(crow::HTTPMethod::GET)(getHistoryHandler);
+        CROW_ROUTE(app, "/api/history").methods(crow::HTTPMethod::GET)(getHistoryHandler);
+        CROW_ROUTE(app, "/history").methods(crow::HTTPMethod::GET)(getHistoryHandler);
+
+        // POST /api/patients/history (and aliases)
+        auto postHistoryHandler = [this](const crow::request& req) {
             auto uid = FirebaseAuth::authenticate(req);
             if (uid.empty()) return crow::response{401, "Unauthorized"};
 
@@ -429,7 +430,11 @@ public:
             } catch (const std::exception& e) {
                 return crow::response{500, e.what()};
             }
-        });
+        };
+
+        CROW_ROUTE(app, "/api/patients/history").methods(crow::HTTPMethod::POST)(postHistoryHandler);
+        CROW_ROUTE(app, "/api/history").methods(crow::HTTPMethod::POST)(postHistoryHandler);
+        CROW_ROUTE(app, "/history").methods(crow::HTTPMethod::POST)(postHistoryHandler);
 
         // GET /api/patients/notifications
         CROW_ROUTE(app, "/api/patients/notifications")

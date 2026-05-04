@@ -42,8 +42,6 @@ public:
                         "patients": 120,
                         "about": "Generated Testing Doctor",
                         "profileImage": "",
-                        "appointmentDuration": 30,
-                        "bufferTime": 5,
                         "department": { "name": "Cardiology", "count": 1 }
                     })";
                     auto dr = bsoncxx::from_json(payload);
@@ -52,6 +50,8 @@ public:
                     // Add full availability schedules for each doctor
                     std::string schedPayload = R"({
                         "doctorId": ")" + drId + R"(",
+                        "appointmentDuration": 30,
+                        "bufferTime": 5,
                         "availability": {
                             "Monday": [
                                 { "startTime": "09:00", "endTime": "12:00" },
@@ -105,14 +105,14 @@ public:
                 "patients": 999,
                 "about": "System Admin Doctor",
                 "profileImage": "",
-                "appointmentDuration": 30,
-                "bufferTime": 10,
                 "department": { "name": "Administration", "count": 1 }
             })");
             mongo.replaceOne("doctors", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("uuid", "admin_doctor_token")).view(), adminDr.view(), true);
 
             auto adminSched = bsoncxx::from_json(R"({
                 "doctorId": "admin_doctor_token",
+                "appointmentDuration": 30,
+                "bufferTime": 10,
                 "availability": {
                     "Monday": [ { "startTime": "09:00", "endTime": "12:00" } ],
                     "Tuesday": [ { "startTime": "09:00", "endTime": "12:00" } ]

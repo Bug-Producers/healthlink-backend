@@ -80,9 +80,7 @@ Updates the doctor's profile fields.
 {
   "name": "Dr. Smith",
   "city": "Cairo",
-  "about": "Cardiologist with 10 years exp",
-  "appointmentDuration": 30,
-  "bufferTime": 10
+  "about": "Cardiologist with 10 years exp"
 }
 ```
 
@@ -111,6 +109,8 @@ Returns the doctor's weekly availability.
 ```json
 {
   "doctorId": "abc123",
+  "appointmentDuration": 30,
+  "bufferTime": 10,
   "availability": {
     "monday": [{"startTime": "09:00", "endTime": "14:00"}],
     "wednesday": [{"startTime": "10:00", "endTime": "16:00"}]
@@ -126,6 +126,8 @@ Replaces the doctor's full weekly schedule.
 **Body:**
 ```json
 {
+  "appointmentDuration": 30,
+  "bufferTime": 10,
   "availability": {
     "monday": [
       {"startTime": "09:00", "endTime": "14:00"},
@@ -311,6 +313,7 @@ Rate a doctor after a visit.
 ---
 
 ### `GET /api/patients/history`
+*(Aliases: `/api/history`, `/history`)*
 View medical history (newest report first — LIFO stack). By default, fetching history without a query parameter assumes the calling token belongs to a Patient trying to fetch their own history.
 
 **Query Parameters:**
@@ -319,6 +322,7 @@ View medical history (newest report first — LIFO stack). By default, fetching 
 ---
 
 ### `POST /api/patients/history`
+*(Aliases: `/api/history`, `/history`)*
 Allows a doctor (or system) to append a diagnosis or prescription report to a patient's history.
 
 **Body:**

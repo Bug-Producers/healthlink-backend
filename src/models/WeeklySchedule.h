@@ -11,4 +11,6 @@
 struct WeeklySchedule {
     std::string doctorId;                                                // Unique ID of the doctor to whom this schedule belongs
     std::unordered_map<std::string, LinkedList<TimeSlot>> availability;  // Map of days (e.g. "monday") to a list of available time slots
+    int appointmentDuration{30};                                         // Average duration of a standard appointment (in minutes)
+    int bufferTime{10};                                                  // Buffer break time between appointments (in minutes)
 };

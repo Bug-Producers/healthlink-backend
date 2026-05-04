@@ -69,8 +69,12 @@ public:
                 if (body.has("country")) doctor.country = body["country"].s();
                 if (body.has("hospitalOrClinicName")) doctor.hospitalOrClinicName = body["hospitalOrClinicName"].s();
                 if (body.has("about")) doctor.about = body["about"].s();
-                if (body.has("appointmentDuration")) doctor.appointmentDuration = body["appointmentDuration"].i();
-                if (body.has("bufferTime")) doctor.bufferTime = body["bufferTime"].i();
+
+                WeeklySchedule ws{};
+                ws.doctorId = uid;
+                if (body.has("appointmentDuration")) ws.appointmentDuration = body["appointmentDuration"].i();
+                if (body.has("bufferTime")) ws.bufferTime = body["bufferTime"].i();
+                scheduleRepo_->updateSchedule(uid, ws).get();
 
                 if (body.has("department") && body["department"].has("name")) {
                     doctor.department.name = body["department"]["name"].s();
@@ -110,8 +114,6 @@ public:
                 json["patients"] = doctor.patients;
                 json["about"] = doctor.about;
                 json["profileImage"] = doctor.profileImage;
-                json["appointmentDuration"] = doctor.appointmentDuration;
-                json["bufferTime"] = doctor.bufferTime;
                 json["department"]["name"] = doctor.department.name;
                 json["department"]["count"] = doctor.department.count;
                 return crow::response{200, json};
@@ -138,8 +140,6 @@ public:
                 if (body.has("country")) doctor.country = body["country"].s();
                 if (body.has("hospitalOrClinicName")) doctor.hospitalOrClinicName = body["hospitalOrClinicName"].s();
                 if (body.has("about")) doctor.about = body["about"].s();
-                if (body.has("appointmentDuration")) doctor.appointmentDuration = body["appointmentDuration"].i();
-                if (body.has("bufferTime")) doctor.bufferTime = body["bufferTime"].i();
 
                 bool ok = doctorRepo_->updateProfile(uid, doctor).get();
                 if (ok) return crow::response{200, "Profile updated"};
@@ -182,6 +182,8 @@ public:
                 auto schedule = scheduleRepo_->getSchedule(uid).get();
                 crow::json::wvalue json;
                 json["doctorId"] = schedule.doctorId;
+                json["appointmentDuration"] = schedule.appointmentDuration;
+                json["bufferTime"] = schedule.bufferTime;
 
                 crow::json::wvalue availability;
                 for (auto& [day, slotList] : schedule.availability) {
@@ -219,6 +221,9 @@ public:
             try {
                 WeeklySchedule ws{};
                 ws.doctorId = uid;
+
+                if (body.has("appointmentDuration")) ws.appointmentDuration = body["appointmentDuration"].i();
+                if (body.has("bufferTime")) ws.bufferTime = body["bufferTime"].i();
 
                 for (auto& day : body["availability"]) {
                     std::string dayName = day.key();
