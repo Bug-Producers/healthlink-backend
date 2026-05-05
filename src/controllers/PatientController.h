@@ -204,6 +204,46 @@ public:
             }
         });
 
+        // POST /api/patients/register
+        CROW_ROUTE(app, "/api/patients/register")
+        .methods(crow::HTTPMethod::POST)
+        ([this](const crow::request& req) {
+            auto uid = FirebaseAuth::authenticate(req);
+            if (uid.empty()) return crow::response{401, "Unauthorized"};
+
+            auto body = crow::json::load(req.body);
+            if (!body || !body.has("name") || !body.has("email") ||
+                !body.has("dateOfBirth") || !body.has("gender")) {
+                return crow::response{400, "Need name, email, dateOfBirth, gender"};
+            }
+
+            try {
+                Patient patient;
+                patient.id = uid;
+                patient.name = body["name"].s();
+                patient.email = body["email"].s();
+                patient.dateOfBirth = body["dateOfBirth"].s();
+                patient.gender = body["gender"].s();
+                patient.profileImage = body.has("profileImage")
+                    ? std::string{body["profileImage"].s()} : "";
+
+                bool ok = patientRepo_->create(patient).get();
+                if (ok) {
+                    crow::json::wvalue json;
+                    json["id"]          = patient.id;
+                    json["name"]        = patient.name;
+                    json["email"]       = patient.email;
+                    json["dateOfBirth"] = patient.dateOfBirth;
+                    json["gender"]      = patient.gender;
+                    json["profileImage"]= patient.profileImage;
+                    return crow::response{201, json};
+                }
+                return crow::response{500, "Failed to create patient"};
+            } catch (const std::exception& e) {
+                return crow::response{500, e.what()};
+            }
+        });
+
         // PUT /api/patients/profile
         CROW_ROUTE(app, "/api/patients/profile")
         .methods(crow::HTTPMethod::PUT)
