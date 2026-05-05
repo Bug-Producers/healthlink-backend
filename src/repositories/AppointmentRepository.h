@@ -124,11 +124,18 @@ public:
             // Find available slots for this day
             auto slots = scheduleRepo_->getAvailableSlots(doctorId, dayOfWeek).get();
 
-            // Walk the LinkedList to find the slot matching the requested time frame
+            // Walk the LinkedList to find the window that contains the requested time frame
             TimeSlot* matchingSlot = nullptr;
             auto* node = slots.getHead();
+            
+            int reqStart = timeToMinutes(frameStart);
+            int reqEnd = timeToMinutes(frameEnd);
+            
             while (node) {
-                if (node->data.startTime == frameStart && node->data.endTime == frameEnd) {
+                int nodeStart = timeToMinutes(node->data.startTime);
+                int nodeEnd = timeToMinutes(node->data.endTime);
+                
+                if (reqStart >= nodeStart && reqEnd <= nodeEnd) {
                     matchingSlot = &(node->data);
                     break;
                 }
