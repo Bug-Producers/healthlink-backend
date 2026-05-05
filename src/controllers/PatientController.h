@@ -347,9 +347,15 @@ public:
                     crow::json::wvalue d;
                     d["uuid"] = node->data.uuid;
                     d["name"] = node->data.name;
+                    d["city"] = node->data.city;
+                    d["country"] = node->data.country;
+                    d["hospitalOrClinicName"] = node->data.hospitalOrClinicName;
                     d["rating"] = node->data.rating;
                     d["expYears"] = node->data.expYears;
+                    d["patients"] = node->data.patients;
+                    d["about"] = node->data.about;
                     d["profileImage"] = node->data.profileImage;
+                    d["department"]["name"] = node->data.department.name;
                     list.push_back(std::move(d));
                     node = node->next;
                 }
